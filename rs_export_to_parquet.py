@@ -3,9 +3,13 @@ import os
 import mysql.connector
 import pandas as pd
 import boto3
+import warnings
 from sqlalchemy import create_engine
 from urllib.parse import quote_plus
 from dotenv import load_dotenv
+
+# Ignorar avisos do pandas sobre conexão direta
+warnings.filterwarnings('ignore', category=UserWarning)
 
 # Carregar variáveis de ambiente (localmente usa .env, no Kestra usa env vars)
 load_dotenv()
@@ -66,6 +70,9 @@ def exportar_para_parquet():
             os.makedirs(output_dir)
             print(f"📂 Pasta '{output_dir}' criada.")
 
+        # Lista para armazenar metadados das tabelas
+        metadados_lista = []
+
         for tabela in TABELAS:
             print(f"\n🚀 Processando tabela: {tabela}")
             try:
@@ -86,6 +93,13 @@ def exportar_para_parquet():
                 df.to_parquet(file_path, index=False, engine='pyarrow')
                 print(f"✅ Salvo localmente: {file_path}")
 
+                # Adicionar aos metadados
+                metadados_lista.append({
+                    'tabela': tabela,
+                    'colunas': len(df.columns),
+                    'linhas': len(df)
+                })
+
                 # Fazer upload para o S3
                 s3_key = f"{tabela}.parquet" # Salva diretamente na raiz do bucket 'parquet'
                 print(f"⬆️ Iniciando upload de {tabela} para S3 (bucket: {s3_config['bucket']})...")
@@ -95,6 +109,19 @@ def exportar_para_parquet():
             except Exception as e:
                 print(f"❌ Erro ao processar {tabela}: {e}")
         
+        # ------------------------------------------------------------
+        # Gerar e enviar o arquivo de resumo (metadados)
+        # ------------------------------------------------------------
+        if metadados_lista:
+            print(f"\n📊 Gerando arquivo de resumo: tabelas.parquet")
+            df_resumo = pd.DataFrame(metadados_lista)
+            resumo_path = os.path.join(output_dir, "tabelas.parquet")
+            df_resumo.to_parquet(resumo_path, index=False, engine='pyarrow')
+            
+            print(f"⬆️ Enviando resumo para S3...")
+            s3_client.upload_file(resumo_path, s3_config['bucket'], "tabelas.parquet")
+            print(f"🎉 Resumo enviado com sucesso!")
+
         conn.close()
         print("\n🔒 Processo concluído e conexão fechada.")
                 
