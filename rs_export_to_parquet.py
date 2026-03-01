@@ -37,9 +37,12 @@ TABELAS = [
     'tabfiliais'
 ]
 
+# Configuração de Lotes (Batching) para não travar o banco
+CHUNK_SIZE = 50000 
+
 def exportar_para_parquet():
     """
-    Lê tabelas do MySQL, salva como Parquet e faz upload para o S3 do Supabase.
+    Lê tabelas do MySQL em lotes (batching), salva como Parquet e faz upload para o S3.
     """
     try:
         # Configurações do S3 (Supabase)
@@ -71,45 +74,51 @@ def exportar_para_parquet():
             print(f"📂 Pasta '{output_dir}' criada.")
 
         for tabela in TABELAS:
-            print(f"\n🚀 Processando tabela: {tabela}")
+            print(f"\n🚀 Iniciando extração total da tabela: {tabela}")
             try:
-                # Obter o total de linhas REAL da tabela (sempre o total do banco)
+                # 1. Obter o total de linhas para monitorar progresso
                 cursor = conn.cursor()
                 cursor.execute(f"SELECT COUNT(*) FROM {tabela}")
-                total_linhas_real = cursor.fetchone()[0]
+                total_linhas = cursor.fetchone()[0]
                 cursor.close()
+                
+                print(f"📊 Volume total: {total_linhas:,} registros")
 
-                # Query com LIMIT 10 para o arquivo de dados (amostra de teste)
-                query = f"SELECT * FROM {tabela} LIMIT 10"
-                
-                # Ler dados usando pandas
-                df = pd.read_sql(query, conn)
-                
-                if df.empty:
+                if total_linhas == 0:
                     print(f"⚠️ Tabela {tabela} está vazia. Pulando...")
                     continue
 
-                # Nome do arquivo de saída
-                file_path = os.path.join(output_dir, f"{tabela}.parquet")
+                # 2. Ler dados em lotes (Opção A: Segura para o banco)
+                query = f"SELECT * FROM {tabela}"
+                chunks = []
+                linhas_lidas = 0
                 
-                # Salvar em Parquet
-                df.to_parquet(file_path, index=False, engine='pyarrow')
-                
-                # LOG DE ESTATÍSTICAS (Separado por tabela)
-                print(f"✅ Arquivo gerado: {file_path} (Amostra de {len(df)} linhas)")
-                print(f"📊 Banco de Dados: {total_linhas_real} linhas totais encontradas em {tabela}")
+                # O pandas faz a leitura em lotes usando o chunksize
+                for chunk in pd.read_sql(query, conn, chunksize=CHUNK_SIZE):
+                    chunks.append(chunk)
+                    linhas_lidas += len(chunk)
+                    percentual = (linhas_lidas / total_linhas) * 100
+                    print(f"   ⏳ Progresso: {linhas_lidas:,} / {total_linhas:,} ({percentual:.1f}%)")
 
-                # Fazer upload para o S3
+                # 3. Consolidar lotes
+                df_final = pd.concat(chunks, ignore_index=True)
+
+                # 4. Salvar localmente
+                file_path = os.path.join(output_dir, f"{tabela}.parquet")
+                df_final.to_parquet(file_path, index=False, engine='pyarrow')
+                print(f"✅ Parquet gerado localmente: {file_path}")
+
+                # 5. Fazer upload para o S3
                 s3_key = f"{tabela}.parquet"
                 print(f"⬆️ Enviando para S3 (bucket: {s3_config['bucket']})...")
                 s3_client.upload_file(file_path, s3_config['bucket'], s3_key)
-                print(f"🎉 Upload de {tabela} concluído!")
+                print(f"🎉 Upload de {tabela} concluído com sucesso!")
                 
             except Exception as e:
                 print(f"❌ Erro ao processar {tabela}: {e}")
         
         conn.close()
-        print("\n🔒 Processo concluído e conexão fechada.")
+        print("\n🔒 Processo concluído e conexão MySQL fechada.")
                 
     except Exception as e:
         print(f"❌ Erro geral na exportação: {e}")
