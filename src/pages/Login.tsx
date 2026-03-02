@@ -83,7 +83,7 @@ export default function Login() {
             transition={{ delay: 0.2, duration: 0.5 }}
             className="w-24 h-24 mb-6 flex items-center justify-center rounded-3xl bg-white shadow-2xl p-4 border border-white/20 backdrop-blur-md"
           >
-            <img src="http://www.rodoviasul.com.br/img/favicon.png" alt="Rodovia Sul Logo" className="w-full h-full object-contain" />
+            <img src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/logo-rodovia.png" alt="Rodovia Sul Logo" className="w-full h-full object-contain" />
           </motion.div>
           <h1 className="text-4xl font-black text-white tracking-tighter drop-shadow-lg">RODOVIA SUL</h1>
           <p className="text-white/80 mt-2 text-xs font-bold uppercase tracking-[0.3em]">Dashboard de Gestão</p>
