@@ -1,70 +1,57 @@
-# Rodovia Sul - ETL & Data Exploration
+# React + TypeScript + Vite
 
-Este repositório contém as ferramentas para extração, exploração e carregamento (ETL) dos dados do banco de dados MySQL da **Rodovia Sul** (Sistema VCR Systems) para arquivos Parquet no S3 do Supabase.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## 🚀 Estrutura do Projeto
+Currently, two official plugins are available:
 
-- `rs_export_to_parquet.py`: Script principal de ETL que extrai tabelas do MySQL, converte para Parquet e faz o upload para o S3 do Supabase.
-- `rs_rodoviasul_etl.yml`: Configuração do fluxo (Blueprint) para execução automatizada no **Kestra**.
-- `explorador_rodoviasul.py`: Ferramenta para mapeamento de estrutura de tabelas, análise de volume e identificação de campos críticos.
-- `test_amostras.py`: Script rápido para validar a conexão e visualizar os primeiros 10 registros de cada tabela.
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-## 🛠️ Tecnologias Utilizadas
+## Expanding the ESLint configuration
 
-- **Python 3.10+**
-- **Pandas**: Manipulação de dados e conversão para Parquet.
-- **MySQL Connector**: Conexão com o banco legado.
-- **Boto3**: Integração com o S3 do Supabase.
-- **Kestra**: Orquestração do fluxo de dados.
+If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
 
-## ⚙️ Configuração e Execução Local
+```js
+export default tseslint.config({
+  extends: [
+    // Remove ...tseslint.configs.recommended and replace with this
+    ...tseslint.configs.recommendedTypeChecked,
+    // Alternatively, use this for stricter rules
+    ...tseslint.configs.strictTypeChecked,
+    // Optionally, add this for stylistic rules
+    ...tseslint.configs.stylisticTypeChecked,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
 
-1. **Clone o repositório:**
-   ```bash
-   git clone https://github.com/rodoviasul/rodovia-sul.git
-   cd rodovia-sul
-   ```
+You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
 
-2. **Crie e ative um ambiente virtual:**
-   ```bash
-   python -m venv .venv
-   .venv\Scripts\activate
-   ```
+```js
+// eslint.config.js
+import reactX from 'eslint-plugin-react-x'
+import reactDom from 'eslint-plugin-react-dom'
 
-3. **Instale as dependências:**
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Configure as variáveis de ambiente:**
-   Crie um arquivo `.env` na raiz do projeto com as seguintes chaves:
-   ```env
-   # Banco de Dados
-   RODOVIASUL_HOST=seu_ip
-   RODOVIASUL_PORT=3306
-   RODOVIASUL_DB=rodoviasul
-   RODOVIASUL_USER=seu_usuario
-   RODOVIASUL_PASSWORD=sua_senha
-
-   # S3 / Supabase
-   SUPABASE_BUCKET=parquet
-   SUPABASE_S3_ENDPOINT=https://xxxx.supabase.co/storage/v1/s3
-   AWS_ACCESS_KEY_ID=sua_key
-   AWS_SECRET_ACCESS_KEY=sua_secret
-   AWS_DEFAULT_REGION=sa-east-1
-   ```
-
-5. **Execute o ETL:**
-   ```bash
-   python rs_export_to_parquet.py
-   ```
-
-## ☁️ Automação no Kestra
-
-Para rodar no Kestra:
-1. Adicione o script `rs_export_to_parquet.py` nos **Namespace Files**.
-2. Crie um novo fluxo usando o conteúdo do arquivo `rs_rodoviasul_etl.yml`.
-3. Configure as variáveis no **KV Store** com o prefixo `RS_` conforme especificado no YAML.
-
----
-*Desenvolvido para Rodovia Sul - Dashboard Financeiro.*
+export default tseslint.config({
+  extends: [
+    // other configs...
+    // Enable lint rules for React
+    reactX.configs['recommended-typescript'],
+    // Enable lint rules for React DOM
+    reactDom.configs.recommended,
+  ],
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
+```
