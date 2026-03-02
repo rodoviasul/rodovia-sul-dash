@@ -111,11 +111,10 @@ export const WaterfallChart = () => {
                     top={yMax}
                     scale={xScale}
                     stroke="currentColor"
-                    className="text-muted-foreground/20"
+                    axisClassName="text-muted-foreground/20"
                     tickStroke="currentColor"
                     tickLabelProps={{
                       fill: "currentColor",
-                      className: "text-muted-foreground font-mono",
                       fontSize: 10,
                       textAnchor: "middle",
                     }}
@@ -123,12 +122,11 @@ export const WaterfallChart = () => {
                   <AxisLeft
                     scale={yScale}
                     stroke="currentColor"
-                    className="text-muted-foreground/20"
+                    axisClassName="text-muted-foreground/20"
                     tickStroke="currentColor"
                     tickFormat={(v) => `${(Number(v) / 1000000).toFixed(1)}M`}
                     tickLabelProps={{
                       fill: "currentColor",
-                      className: "text-muted-foreground/60 font-mono",
                       fontSize: 10,
                       textAnchor: "end",
                       dx: -5,
