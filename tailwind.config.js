@@ -49,6 +49,7 @@ export default {
         // Rodovia Sul Brand Colors
         rodovia: {
           verde: "#24AC84",
+          azul: "#24445C",
           cinza: "#D9D9D9",
           branco: "#FCFCFC",
         },

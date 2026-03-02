@@ -16,9 +16,24 @@ import { cn } from "@/lib/utils";
 
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
 
+import { supabase } from "@/lib/supabase";
+import { toast } from "sonner";
+
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const [theme, setTheme] = useState<"light" | "dark">("light");
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("Logout realizado com sucesso");
+    } catch (error: any) {
+      toast.error("Erro ao sair", {
+        description: error.message
+      });
+    }
+  };
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -50,7 +65,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           playsInline
           className={cn(
             "w-full h-full object-cover transition-opacity duration-1000",
-            theme === "dark" ? "opacity-[0.15] grayscale" : "opacity-[0.05] grayscale-[0.5]"
+            "opacity-50 grayscale"
           )}
         >
           <source src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/fundo.mp4" type="video/mp4" />
@@ -96,6 +111,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 "text-[10px] font-mono font-bold uppercase tracking-widest",
                 theme === "dark" ? "text-zinc-500 group-hover:text-white" : "text-zinc-400 group-hover:text-zinc-900"
               )}>MAXIMIZAR</span>
+            </button>
+            <button 
+              onClick={handleLogout}
+              className={cn(
+                "flex items-center gap-2 px-4 py-2 border rounded-full transition-all group",
+                theme === "dark"
+                  ? "bg-zinc-900/50 border-white/5 hover:bg-red-950/30"
+                  : "bg-white border-black/5 shadow-sm hover:bg-red-50 hover:border-red-100 shadow-red-100/20"
+              )}
+            >
+              <LogOut className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600 transition-colors" />
+              <span className={cn(
+                "text-[10px] font-mono font-bold uppercase tracking-widest transition-colors",
+                theme === "dark" ? "text-zinc-500 group-hover:text-red-400" : "text-zinc-400 group-hover:text-red-600"
+              )}>SAIR</span>
             </button>
           </div>
 
@@ -175,7 +205,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <p className="text-[9px] font-mono uppercase tracking-[0.3em]">RODOVIA SUL ANALYTICS v1.1.0</p>
           <div className="flex gap-8">
             <Settings className="w-3 h-3 cursor-pointer hover:text-rodovia-verde" />
-            <LogOut className="w-3 h-3 cursor-pointer hover:text-destructive" />
+            <button onClick={handleLogout} title="Sair do sistema">
+              <LogOut className="w-3 h-3 cursor-pointer hover:text-destructive" />
+            </button>
           </div>
         </footer>
       </main>

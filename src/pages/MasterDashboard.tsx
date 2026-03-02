@@ -31,10 +31,9 @@ const KPICard = ({
     whileHover={{ y: -5 }}
     onClick={onClick}
     className={cn(
-      "p-6 rounded-3xl relative overflow-hidden group cursor-pointer transition-all duration-300 border",
-      highlight 
-        ? "bg-rodovia-verde/10 border-rodovia-verde/30 shadow-[0_0_30px_rgba(36,172,132,0.1)]" 
-        : "bg-card border-border hover:border-rodovia-verde/30 shadow-sm hover:shadow-xl"
+      "p-6 rounded-3xl relative overflow-hidden group cursor-pointer transition-all duration-300 border backdrop-blur-sm",
+      "bg-card/60 border-border hover:border-rodovia-verde/30 shadow-sm hover:shadow-xl",
+      highlight && "border-rodovia-verde/50 shadow-[0_0_30px_rgba(36,172,132,0.15)]"
     )}
   >
     <div className="flex flex-col gap-1 relative z-10">
@@ -174,7 +173,7 @@ export default function MasterDashboard() {
               </div>
             </div>
 
-            <div className="mt-12 p-6 bg-rodovia-verde/5 border border-rodovia-verde/10 rounded-2xl group-hover:bg-rodovia-verde/10 transition-colors">
+            <div className="mt-12 p-6 bg-card/40 border border-border rounded-2xl group-hover:bg-card/60 transition-colors backdrop-blur-sm">
               <div className="flex items-start gap-4">
                 <Info className="w-5 h-5 text-rodovia-verde shrink-0 mt-0.5" />
                 <p className="text-xs font-serif italic text-muted-foreground leading-relaxed">

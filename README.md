@@ -1,57 +1,42 @@
-# React + TypeScript + Vite
+# Rodovia Sul - Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Este projeto é um dashboard financeiro e operacional para a Rodovia Sul, desenvolvido com React, TypeScript e Vite.
 
-Currently, two official plugins are available:
+## 🚀 Tecnologias
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **React** - Biblioteca para construção de interfaces
+- **TypeScript** - Tipagem estática para JavaScript
+- **Vite** - Build tool rápida e moderna
+- **Tailwind CSS** - Framework de estilização utilitária
+- **Shadcn UI** - Componentes de interface reutilizáveis
+- **Recharts** - Biblioteca de gráficos
+- **Zustand** - Gerenciamento de estado
+- **Lucide React** - Ícones
 
-## Expanding the ESLint configuration
+## 📂 Estrutura do Projeto
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+O projeto é focado exclusivamente no front-end do dashboard:
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+- `src/components`: Componentes reutilizáveis (UI, layout e específicos do dashboard)
+- `src/pages`: Páginas principais do dashboard (Master, DRE, Fluxo de Caixa, etc.)
+- `src/hooks`: Hooks customizados
+- `src/lib`: Utilitários e configurações
+- `src/data`: Dados mockados ou definições de dados
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## 🛠️ Como rodar o projeto
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+1. Instale as dependências:
+   ```bash
+   npm install
+   ```
 
-export default tseslint.config({
-  extends: [
-    // other configs...
-    // Enable lint rules for React
-    reactX.configs['recommended-typescript'],
-    // Enable lint rules for React DOM
-    reactDom.configs.recommended,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+2. Inicie o servidor de desenvolvimento:
+   ```bash
+   npm run dev
+   ```
+
+3. Acesse `http://localhost:5173` no seu navegador.
+
+## 🌐 Deploy
+
+O projeto está configurado para deploy automático na **Vercel**.

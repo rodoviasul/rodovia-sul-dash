@@ -137,10 +137,9 @@ export default function DREDashboard() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: i * 0.1 }}
             className={cn(
-              "p-6 rounded-2xl border transition-all duration-300",
-              kpi.highlight 
-                ? "bg-rodovia-verde/10 border-rodovia-verde/30 shadow-[0_0_20px_rgba(36,172,132,0.1)]" 
-                : "bg-card border-border hover:border-rodovia-verde/30 shadow-sm hover:shadow-md"
+              "p-6 rounded-2xl border transition-all duration-300 backdrop-blur-sm",
+              "bg-card/60 border-border hover:border-rodovia-verde/30 shadow-sm hover:shadow-md",
+              kpi.highlight && "border-rodovia-verde/50 shadow-[0_0_20px_rgba(36,172,132,0.15)]"
             )}
           >
             <span className="font-mono text-[10px] uppercase text-muted-foreground">{kpi.label}</span>
