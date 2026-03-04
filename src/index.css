@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 98%; /* White Smoke / Editorial Light */
+    --foreground: 222 47% 5%; /* Quase Preto Navy para contraste máximo */
+    
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 5%;
+    
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 5%;
+    
+    --primary: 163 65% 41%; /* #24AC84 */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 210 20% 94%; /* Light Gray Blue */
+    --secondary-foreground: 222 47% 10%;
+    
+    --muted: 210 20% 92%;
+    --muted-foreground: 222 20% 35%; /* Escurecido para melhor legibilidade */
+    
+    --accent: 163 65% 41%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98.8%;
+    
+    --border: 214 32% 85%; /* Bordas um pouco mais visíveis */
+    --input: 214 32% 85%;
+    --ring: 163 65% 41%;
+    
+    --radius: 1.5rem;
+    
+    /* Rodovia Sul Specific Colors */
+    --rodovia-verde: 163 65% 41%; /* #24AC84 */
+    --rodovia-cinza: 0 0% 85%;   /* #D9D9D9 */
+    --rodovia-gelo: 0 0% 99%;    /* #FCFCFC */
+  }
+
+  .dark {
+    --background: 222 47% 2%; 
+    --foreground: 0 0% 98.8%;
+    
+    --card: 222 47% 10%; /* Lighter card */
+    --card-foreground: 0 0% 98.8%;
+    
+    --popover: 222 47% 12%;
+    --popover-foreground: 0 0% 98.8%;
+    
+    --primary: 163 65% 41%;
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 222 47% 20%; /* Much lighter secondary */
+    --secondary-foreground: 0 0% 98.8%;
+    
+    --muted: 222 47% 25%; /* Much lighter muted for chart backgrounds */
+    --muted-foreground: 215 20.2% 85%; /* Very light text for readability */
+    
+    --accent: 163 65% 41%;
+    --accent-foreground: 0 0% 100%;
+    
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98.8%;
+    
+    --border: 222 47% 25%; /* Stronger borders for definition */
+    --input: 222 47% 25%;
+    --ring: 163 65% 41%;
+  }
+}
+
+@layer utilities {
+  .text-rodovia-verde {
+    color: hsl(var(--rodovia-verde));
+  }
+  .bg-rodovia-verde {
+    background-color: hsl(var(--rodovia-verde));
+  }
+  .border-rodovia-verde {
+    border-color: hsl(var(--rodovia-verde));
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-serif;
+  }
+}
+
+/* Custom scrollbar for dark editorial feel */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted));
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary));
+}
