@@ -172,15 +172,6 @@ export default function MasterDashboard() {
                 ))}
               </div>
             </div>
-
-            <div className="mt-12 p-6 bg-card/40 border border-border rounded-2xl group-hover:bg-card/60 transition-colors backdrop-blur-sm">
-              <div className="flex items-start gap-4">
-                <Info className="w-5 h-5 text-rodovia-verde shrink-0 mt-0.5" />
-                <p className="text-xs font-serif italic text-muted-foreground leading-relaxed">
-                  A Matriz RS mantém a liderança isolada devido à otimização de rotas e menor custo por KM rodado.
-                </p>
-              </div>
-            </div>
           </div>
         </div>
       </section>

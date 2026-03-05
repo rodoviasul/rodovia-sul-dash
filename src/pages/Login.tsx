@@ -62,7 +62,7 @@ export default function Login() {
           loop
           muted
           playsInline
-          className="w-full h-full object-cover opacity-50 grayscale"
+          className="w-full h-full object-cover opacity-70 grayscale"
         >
           <source src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/fundo.mp4" type="video/mp4" />
         </video>

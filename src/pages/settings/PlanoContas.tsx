@@ -16,10 +16,12 @@ import {
   LineChart,
   Percent,
   Coins,
-  ArrowUpCircle,
-  ArrowDownCircle,
   TrendingUp,
-  ArrowLeftRight
+  ArrowLeftRight,
+  RefreshCw,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
@@ -69,7 +71,7 @@ const ICONES_CATEGORIA: Record<string, { icon: any, color: string }> = {
 };
 
 const ConfiguracaoContas: React.FC = () => {
-  const { contas, loading: loadingContas, error, salvarConfiguracao } = useContas();
+  const { contas, loading: loadingContas, error, lastSync, salvarConfiguracao, refresh } = useContas();
   const { 
     categoriasDRE, 
     subcategoriasDRE, 
@@ -88,13 +90,19 @@ const ConfiguracaoContas: React.FC = () => {
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [contaEditando, setContaEditando] = useState<ContaUnificada | null>(null);
   
-  // Estado do Formulário (Sheet) - Agora guarda IDs
   const [formConfig, setFormConfig] = useState<Partial<ContaUnificada>>({});
   const [salvando, setSalvando] = useState(false);
+  const [sincronizando, setSincronizando] = useState(false);
+
+  // Ordenação
+  const [ordenacao, setOrdenacao] = useState<{ coluna: keyof ContaUnificada | 'status'; direcao: 'asc' | 'desc' }>({
+    coluna: 'concod',
+    direcao: 'asc'
+  });
 
   // Lógica de Filtro e Busca
   const dadosFiltrados = useMemo(() => {
-    return contas.filter((conta) => {
+    let filtrados = contas.filter((conta) => {
       const matchTexto = 
         conta.condescr.toLowerCase().includes(busca.toLowerCase()) ||
         conta.concod.includes(busca);
@@ -106,12 +114,58 @@ const ConfiguracaoContas: React.FC = () => {
       
       return true;
     });
-  }, [contas, busca, filtroStatus]);
+
+    // Aplicar Ordenação
+    return filtrados.sort((a, b) => {
+      let valA: any;
+      let valB: any;
+
+      if (ordenacao.coluna === 'status') {
+        valA = a.precisa_configurar ? 1 : 0;
+        valB = b.precisa_configurar ? 1 : 0;
+      } else if (ordenacao.coluna === 'dre_categoria_id') {
+        valA = categoriasDRE.find(c => c.id === a.dre_categoria_id)?.nome || '';
+        valB = categoriasDRE.find(c => c.id === b.dre_categoria_id)?.nome || '';
+      } else if (ordenacao.coluna === 'dre_subcategoria_id') {
+        valA = subcategoriasDRE.find(s => s.id === a.dre_subcategoria_id)?.nome || '';
+        valB = subcategoriasDRE.find(s => s.id === b.dre_subcategoria_id)?.nome || '';
+      } else {
+        valA = a[ordenacao.coluna as keyof ContaUnificada] || '';
+        valB = b[ordenacao.coluna as keyof ContaUnificada] || '';
+      }
+
+      // Lógica especial para Código (Numérica)
+      if (ordenacao.coluna === 'concod') {
+        const numA = parseInt(valA as string) || 0;
+        const numB = parseInt(valB as string) || 0;
+        return ordenacao.direcao === 'asc' ? numA - numB : numB - numA;
+      }
+
+      if (valA < valB) return ordenacao.direcao === 'asc' ? -1 : 1;
+      if (valA > valB) return ordenacao.direcao === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [contas, busca, filtroStatus, ordenacao, categoriasDRE, subcategoriasDRE]);
 
   // Paginação
   const totalPaginas = Math.ceil(dadosFiltrados.length / ITENS_POR_PAGINA);
   const inicio = (paginaAtual - 1) * ITENS_POR_PAGINA;
   const dadosPaginados = dadosFiltrados.slice(inicio, inicio + ITENS_POR_PAGINA);
+
+  // Handlers
+  const handleSort = (coluna: keyof ContaUnificada | 'status') => {
+    setOrdenacao(prev => ({
+      coluna,
+      direcao: prev.coluna === coluna && prev.direcao === 'asc' ? 'desc' : 'asc'
+    }));
+  };
+
+  const SortIcon = ({ coluna }: { coluna: keyof ContaUnificada | 'status' }) => {
+    if (ordenacao.coluna !== coluna) return <ArrowUpDown className="ml-2 h-3 w-3 opacity-30" />;
+    return ordenacao.direcao === 'asc' 
+      ? <ArrowUp className="ml-2 h-3 w-3 text-rodovia-verde" /> 
+      : <ArrowDown className="ml-2 h-3 w-3 text-rodovia-verde" />;
+  };
 
   // Helpers para Display (ID -> Nome)
   const getCategoriaNome = (id: string | null) => {
@@ -142,6 +196,18 @@ const ConfiguracaoContas: React.FC = () => {
 
 
   // Ações
+  const handleRefresh = async () => {
+    setSincronizando(true);
+    try {
+      await refresh();
+      toast.success("Dados sincronizados com o ERP!");
+    } catch (err) {
+      toast.error("Erro ao sincronizar com o ERP.");
+    } finally {
+      setSincronizando(false);
+    }
+  };
+
   const abrirEdicao = (conta: ContaUnificada) => {
     setContaEditando(conta);
     setFormConfig({
@@ -172,7 +238,7 @@ const ConfiguracaoContas: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)] animate-in fade-in">
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
         <Loader2 className="w-10 h-10 animate-spin text-rodovia-verde mb-4" />
         <span className="text-zinc-500 font-mono text-sm uppercase tracking-widest">Carregando Sistema...</span>
       </div>
@@ -190,24 +256,28 @@ const ConfiguracaoContas: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight text-zinc-900 dark:text-zinc-100">
-            Plano de Contas Gerencial
+    <div className="flex flex-col h-full px-12 pb-4 space-y-4 overflow-hidden">
+      {/* Editorial Header - Fixed Area */}
+      <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-end gap-4 border-b border-rodovia-verde/20 pb-4">
+        <div className="space-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-px bg-rodovia-verde" />
+            <span className="text-[10px] font-mono font-black text-rodovia-verde uppercase tracking-[0.4em]">Gestão de Dados</span>
+          </div>
+          <h1 className="text-3xl font-black tracking-tighter text-rodovia-azul uppercase">
+            Plano de Contas <span className="text-rodovia-verde">Gerencial</span>
           </h1>
-          <p className="text-zinc-500 dark:text-zinc-400 text-sm mt-1">
-            Configure como cada conta do ERP deve aparecer nos relatórios.
-          </p>
         </div>
         
-        <div className="flex items-center gap-2 bg-white dark:bg-zinc-900 p-1 rounded-lg border shadow-sm">
+        <div className="flex items-center gap-1 bg-white/50 backdrop-blur-md p-1 rounded-xl border border-black/5">
           <Button 
             variant={filtroStatus === 'todos' ? 'secondary' : 'ghost'} 
             size="sm"
             onClick={() => { setFiltroStatus('todos'); setPaginaAtual(1); }}
-            className="text-xs font-medium"
+            className={cn(
+              "text-[9px] font-black uppercase tracking-widest rounded-lg px-4 h-8",
+              filtroStatus === 'todos' && "bg-rodovia-verde text-white hover:bg-rodovia-verde shadow-lg shadow-rodovia-verde/20"
+            )}
           >
             Todas
           </Button>
@@ -215,7 +285,10 @@ const ConfiguracaoContas: React.FC = () => {
             variant={filtroStatus === 'pendentes' ? 'secondary' : 'ghost'} 
             size="sm"
             onClick={() => { setFiltroStatus('pendentes'); setPaginaAtual(1); }}
-            className="text-xs font-medium text-amber-600 dark:text-amber-500"
+            className={cn(
+              "text-[9px] font-black uppercase tracking-widest rounded-lg px-4 h-8",
+              filtroStatus === 'pendentes' ? "bg-amber-500 text-white hover:bg-amber-500 shadow-lg shadow-amber-500/20" : "text-amber-600"
+            )}
           >
             Pendentes
           </Button>
@@ -223,131 +296,229 @@ const ConfiguracaoContas: React.FC = () => {
             variant={filtroStatus === 'configurados' ? 'secondary' : 'ghost'} 
             size="sm"
             onClick={() => { setFiltroStatus('configurados'); setPaginaAtual(1); }}
-            className="text-xs font-medium text-green-600 dark:text-green-500"
+            className={cn(
+              "text-[9px] font-black uppercase tracking-widest rounded-lg px-4 h-8",
+              filtroStatus === 'configurados' ? "bg-emerald-600 text-white hover:bg-emerald-600 shadow-lg shadow-emerald-600/20" : "text-green-600"
+            )}
           >
             Configuradas
           </Button>
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className="flex items-center gap-4 bg-white dark:bg-zinc-900/50 p-4 rounded-xl border shadow-sm">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-400" />
+      {/* Advanced Toolbar - Fixed Area */}
+      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-12 gap-4">
+        <div className="md:col-span-7 relative group">
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-rodovia-verde transition-colors">
+            <Search className="w-4 h-4" />
+          </div>
           <Input 
-            placeholder="Buscar por nome ou código..." 
+            placeholder="BUSCAR CONTA..." 
             value={busca}
             onChange={(e) => { setBusca(e.target.value); setPaginaAtual(1); }}
-            className="pl-9 bg-transparent dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700"
+            className="pl-10 h-12 bg-white rounded-xl border-2 border-zinc-200 text-[11px] font-black uppercase tracking-widest shadow-md focus:border-rodovia-verde transition-all text-rodovia-azul"
           />
         </div>
-        <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
-          <span className="hidden md:inline">TOTAL:</span>
-          <span className="font-bold text-zinc-900 dark:text-zinc-100">{dadosFiltrados.length}</span>
+        
+        <div className="md:col-span-3 grid grid-cols-[1fr_auto_1fr] items-center bg-white rounded-xl border-2 border-zinc-200 shadow-md h-12 overflow-hidden">
+          <div className="flex flex-col items-center justify-center">
+            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Total</span>
+            <span className="text-base font-black text-rodovia-azul">{contas.length}</span>
+          </div>
+          <div className="w-px h-6 bg-zinc-200" />
+          <div className="flex flex-col items-center justify-center">
+            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Filtrados</span>
+            <span className="text-base font-black text-rodovia-verde">{dadosFiltrados.length}</span>
+          </div>
+        </div>
+
+        <div className="md:col-span-2 flex flex-col gap-1">
+          <Button 
+            onClick={handleRefresh}
+            disabled={sincronizando}
+            className="h-9 bg-rodovia-azul hover:bg-rodovia-azul/90 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95"
+          >
+            {sincronizando ? (
+              <Loader2 className="w-3 h-3 animate-spin mr-2" />
+            ) : (
+              <RefreshCw className="w-3 h-3 mr-2" />
+            )}
+            Sincronizar
+          </Button>
+          {lastSync && (
+            <span className="text-[7px] font-mono font-bold text-zinc-500 uppercase text-center">
+              Última sincronia: {lastSync}
+            </span>
+          )}
         </div>
       </div>
 
-      {/* Tabela */}
-      <div className="bg-white dark:bg-zinc-900 rounded-xl border shadow-sm overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-slate-900 hover:bg-slate-900 border-b-0">
-              <TableHead className="w-[100px] text-white font-bold tracking-wider py-4">CÓDIGO</TableHead>
-              <TableHead className="text-white font-bold tracking-wider py-4">CONTA (ERP)</TableHead>
-              <TableHead className="w-[220px] text-white font-bold tracking-wider py-4">CATEGORIA (DRE)</TableHead>
-              <TableHead className="w-[200px] text-white font-bold tracking-wider py-4">DETALHE</TableHead>
-              <TableHead className="w-[120px] text-right text-white font-bold tracking-wider py-4 pr-6">STATUS</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {dadosPaginados.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={6} className="h-32 text-center text-zinc-500">
-                  Nenhuma conta encontrada.
-                </TableCell>
-              </TableRow>
-            ) : (
-              dadosPaginados.map((conta, index) => {
-                const badgeInfo = getBadgeInfo(conta.dre_categoria_id);
-                const BadgeIcon = badgeInfo?.icon;
-                const categoriaNome = getCategoriaNome(conta.dre_categoria_id);
-                const subcategoriaNome = getSubcategoriaNome(conta.dre_subcategoria_id);
-                const isEven = index % 2 === 0;
-
-                return (
-                <TableRow 
-                  key={conta.concod} 
-                  className={cn(
-                    "group cursor-pointer transition-colors border-b border-zinc-100 dark:border-zinc-800",
-                    isEven ? "bg-white dark:bg-zinc-900" : "bg-zinc-50/50 dark:bg-zinc-800/30",
-                    "hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                  )}
-                  onClick={() => abrirEdicao(conta)}
+      {/* Tabela Container - Scrollable Area */}
+      <div className="flex-1 min-h-0 bg-white/90 backdrop-blur-2xl rounded-[2rem] border border-black/5 overflow-hidden flex flex-col">
+        <Table containerClassName="flex-1 overflow-auto">
+          <TableHeader className="sticky top-0 z-20">
+              <TableRow className="border-b-0 shadow-md">
+                <TableHead 
+                  className="w-[100px] bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  onClick={() => handleSort('concod')}
                 >
-                  <TableCell className="font-mono text-xs font-medium text-zinc-500 border-r border-zinc-100 dark:border-zinc-800">
-                    {conta.concod}
-                  </TableCell>
-                  <TableCell className="font-semibold text-zinc-700 dark:text-zinc-200 group-hover:text-blue-700 dark:group-hover:text-blue-400 transition-colors border-r border-zinc-100 dark:border-zinc-800">
-                    {conta.condescr}
-                  </TableCell>
-                  <TableCell className="border-r border-zinc-100 dark:border-zinc-800">
-                    {categoriaNome ? (
-                      <Badge variant="outline" className="font-normal text-xs bg-white dark:bg-zinc-800 border-zinc-300 dark:border-zinc-700 gap-1 pl-1 pr-2 py-1 shadow-sm">
-                         {BadgeIcon && <BadgeIcon className={cn("w-3.5 h-3.5", badgeInfo?.color)} />}
-                         <span className="text-zinc-700 dark:text-zinc-200 font-medium">{categoriaNome}</span>
-                      </Badge>
-                    ) : (
-                      <span className="text-zinc-300 dark:text-zinc-600 text-xs italic">-</span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-sm text-zinc-600 dark:text-zinc-400 border-r border-zinc-100 dark:border-zinc-800">
-                    {subcategoriaNome || '-'}
-                  </TableCell>
-                  <TableCell className="text-right border-r border-zinc-100 dark:border-zinc-800 pr-6">
-                    {conta.precisa_configurar ? (
-                      <Badge variant="secondary" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/50">
-                        PENDENTE
-                      </Badge>
-                    ) : (
-                      <Badge variant="secondary" className="text-[10px] bg-green-50 text-green-600 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/50">
-                        OK
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    <Settings2 className="w-4 h-4 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                  <div className="flex items-center">CÓDIGO <SortIcon coluna="concod" /></div>
+                </TableHead>
+                <TableHead 
+                  className="bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  onClick={() => handleSort('condescr')}
+                >
+                  <div className="flex items-center">CONTA (ERP) <SortIcon coluna="condescr" /></div>
+                </TableHead>
+                <TableHead 
+                  className="w-[200px] bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  onClick={() => handleSort('dre_categoria_id')}
+                >
+                  <div className="flex items-center">CATEGORIA (DRE) <SortIcon coluna="dre_categoria_id" /></div>
+                </TableHead>
+                <TableHead 
+                  className="w-[180px] bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  onClick={() => handleSort('dre_subcategoria_id')}
+                >
+                  <div className="flex items-center">DETALHE <SortIcon coluna="dre_subcategoria_id" /></div>
+                </TableHead>
+                <TableHead 
+                  className="w-[100px] text-right bg-slate-900 text-white font-bold tracking-wider py-3 pr-6 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  onClick={() => handleSort('status')}
+                >
+                  <div className="flex items-center justify-end">STATUS <SortIcon coluna="status" /></div>
+                </TableHead>
+                <TableHead className="w-[40px] bg-slate-900"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {dadosPaginados.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-32 text-center text-zinc-500">
+                    Nenhuma conta encontrada.
                   </TableCell>
                 </TableRow>
-              )})
-            )}
-          </TableBody>
-        </Table>
+              ) : (
+                dadosPaginados.map((conta, index) => {
+                  const badgeInfo = getBadgeInfo(conta.dre_categoria_id);
+                  const BadgeIcon = badgeInfo?.icon;
+                  const categoriaNome = getCategoriaNome(conta.dre_categoria_id);
+                  const subcategoriaNome = getSubcategoriaNome(conta.dre_subcategoria_id);
+                  const isEven = index % 2 === 0;
 
-        {/* Paginação */}
+                  return (
+                  <TableRow 
+                    key={conta.concod} 
+                    className={cn(
+                      "group cursor-pointer transition-colors border-b border-zinc-100",
+                      isEven ? "bg-white" : "bg-zinc-50/50",
+                      "hover:bg-rodovia-verde/5"
+                    )}
+                    onClick={() => abrirEdicao(conta)}
+                  >
+                    <TableCell className="font-mono text-[10px] font-medium text-zinc-500 border-r border-zinc-100 py-3">
+                      {conta.concod}
+                    </TableCell>
+                    <TableCell className="font-bold text-xs text-zinc-700 group-hover:text-rodovia-verde transition-colors border-r border-zinc-100 py-3 uppercase">
+                      {conta.condescr}
+                    </TableCell>
+                    <TableCell className="border-r border-zinc-100 py-3">
+                      {categoriaNome ? (
+                        <Badge variant="outline" className="font-normal text-[9px] bg-white border-zinc-300 gap-1 pl-1 pr-2 py-0.5 shadow-sm">
+                           {BadgeIcon && <BadgeIcon className={cn("w-3 h-3", badgeInfo?.color)} />}
+                           <span className="text-zinc-700 font-medium uppercase">{categoriaNome}</span>
+                        </Badge>
+                      ) : (
+                        <span className="text-zinc-300 text-[10px] italic">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-[10px] text-zinc-600 border-r border-zinc-100 py-3 uppercase">
+                      {subcategoriaNome || '-'}
+                    </TableCell>
+                    <TableCell className="text-right border-r border-zinc-100 pr-6 py-3">
+                      {conta.precisa_configurar ? (
+                        <Badge variant="secondary" className="text-[8px] bg-amber-50 text-amber-600 border-amber-200 font-black">
+                          PENDENTE
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[8px] bg-green-50 text-green-600 border-green-200 font-black">
+                          OK
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="py-3">
+                      <Settings2 className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                    </TableCell>
+                  </TableRow>
+                )})
+              )}
+            </TableBody>
+          </Table>
+
+        {/* Paginação - Fixed Bottom Area within Container */}
         {totalPaginas > 1 && (
-          <div className="flex items-center justify-between px-4 py-4 border-t bg-zinc-50/50 dark:bg-zinc-900/50">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
-              disabled={paginaAtual === 1}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-xs text-zinc-500 font-mono">
-              PÁGINA {paginaAtual} DE {totalPaginas}
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
-              disabled={paginaAtual === totalPaginas}
-              className="h-8 w-8 p-0"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+          <div className="flex-shrink-0 flex items-center justify-between px-8 py-3 border-t bg-zinc-50/80 backdrop-blur-md">
+            <div className="flex items-center gap-4">
+              <span className="text-[9px] font-mono font-black text-zinc-400 uppercase tracking-widest">
+                {inicio + 1}-{Math.min(inicio + ITENS_POR_PAGINA, dadosFiltrados.length)} DE {dadosFiltrados.length}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPaginaAtual((p) => Math.max(1, p - 1))}
+                disabled={paginaAtual === 1}
+                className="h-8 w-8 p-0 rounded-lg border-black/5 bg-white shadow-sm hover:bg-rodovia-verde hover:text-white transition-all"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="flex items-center gap-1">
+                {Array.from({ length: Math.min(5, totalPaginas) }, (_, i) => {
+                  let pageNum = paginaAtual;
+                  if (paginaAtual <= 3) pageNum = i + 1;
+                  else if (paginaAtual >= totalPaginas - 2) pageNum = totalPaginas - 4 + i;
+                  else pageNum = paginaAtual - 2 + i;
+
+                  if (pageNum <= 0 || pageNum > totalPaginas) return null;
+
+                  return (
+                    <Button
+                      key={pageNum}
+                      variant={paginaAtual === pageNum ? "secondary" : "ghost"}
+                      size="sm"
+                      onClick={() => setPaginaAtual(pageNum)}
+                      className={cn(
+                        "h-8 w-8 p-0 rounded-lg text-[9px] font-black font-mono transition-all",
+                        paginaAtual === pageNum 
+                          ? "bg-rodovia-verde text-white shadow-lg shadow-rodovia-verde/20 hover:bg-rodovia-verde" 
+                          : "text-zinc-400 hover:bg-zinc-100"
+                      )}
+                    >
+                      {pageNum}
+                    </Button>
+                  );
+                })}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setPaginaAtual((p) => Math.min(totalPaginas, p + 1))}
+                disabled={paginaAtual === totalPaginas}
+                className="h-8 w-8 p-0 rounded-lg border-black/5 bg-white shadow-sm hover:bg-rodovia-verde hover:text-white transition-all"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-2">
+               <span className="text-[9px] font-mono font-black text-zinc-400 uppercase tracking-widest">
+                PAG {paginaAtual}/{totalPaginas}
+              </span>
+            </div>
           </div>
         )}
       </div>
@@ -413,7 +584,7 @@ const ConfiguracaoContas: React.FC = () => {
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="p-3 bg-zinc-50 dark:bg-zinc-800 rounded-md border border-zinc-200 dark:border-zinc-700 text-sm text-zinc-500 italic text-center">
+                <div className="p-3 bg-zinc-50 rounded-md border border-zinc-200 text-sm text-zinc-500 italic text-center">
                   {formConfig.dre_categoria_id 
                     ? "Nenhuma subcategoria cadastrada para esta categoria." 
                     : "Selecione uma categoria primeiro."}

@@ -8,7 +8,13 @@ export default defineConfig({
     sourcemap: 'hidden',
   },
   server: {
-    // Proxy removido pois a API é acessada diretamente via VITE_API_URL
+    proxy: {
+      '/api': {
+        target: 'https://rodovia-sul-api.vercel.app',
+        changeOrigin: true,
+        rewrite: (path) => path,
+      },
+    },
   },
   plugins: [
     react({

@@ -10,6 +10,7 @@ import SettingsLayout from "@/pages/settings/SettingsLayout";
 import PlanoContas from "@/pages/settings/PlanoContas";
 import EstruturaDRE from "@/pages/settings/EstruturaDRE";
 import EstruturaFluxo from "@/pages/settings/EstruturaFluxo";
+import QueryTester from "@/pages/settings/QueryTester";
 import { Toaster } from "@/components/ui/sonner";
 
 // Wrapper para layout do Dashboard
@@ -72,6 +73,7 @@ export default function App() {
               <Route path="plano-contas" element={<PlanoContas />} />
               <Route path="estrutura-dre" element={<EstruturaDRE />} />
               <Route path="estrutura-fluxo" element={<EstruturaFluxo />} />
+              <Route path="query-tester" element={<QueryTester />} />
             </Route>
 
             {/* 404 dentro do Dashboard */}

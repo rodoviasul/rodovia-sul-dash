@@ -45,12 +45,12 @@ export const useDominios = () => {
         setLoading(true);
         
         // 1. DRE
-        const { data: dreCats } = await supabase.from('fin_categorias_dre').select('*').order('ordem');
-        const { data: dreSub } = await supabase.from('fin_subcategorias_dre').select('*').order('nome');
+        const { data: dreCats } = await supabase.from('fin_categorias_dre').select('*').order('ordem').limit(1000);
+        const { data: dreSub } = await supabase.from('fin_subcategorias_dre').select('*').order('nome').limit(5000);
 
         // 2. Fluxo
-        const { data: fluxoTipos } = await supabase.from('fin_fluxo_tipos').select('*').order('ordem');
-        const { data: fluxoCats } = await supabase.from('fin_fluxo_categorias').select('*').order('ordem');
+        const { data: fluxoTipos } = await supabase.from('fin_fluxo_tipos').select('*').order('ordem').limit(1000);
+        const { data: fluxoCats } = await supabase.from('fin_fluxo_categorias').select('*').order('ordem').limit(5000);
 
         setCategoriasDRE(dreCats || []);
         setSubcategoriasDRE(dreSub || []);

@@ -199,45 +199,6 @@ export default function DREDashboard() {
         </div>
       </section>
 
-      {/* Editorial Insight Section */}
-      <motion.section 
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="bg-rodovia-verde/5 border border-rodovia-verde/20 p-10 rounded-3xl flex gap-10 items-start relative overflow-hidden"
-      >
-        <div className="absolute top-0 right-0 w-64 h-64 bg-rodovia-verde/5 rounded-full blur-[80px] -mr-32 -mt-32" />
-        
-        <div className="w-16 h-16 rounded-2xl bg-rodovia-verde/20 flex items-center justify-center shrink-0 border border-rodovia-verde/30 shadow-lg">
-          <FileText className="w-8 h-8 text-rodovia-verde" />
-        </div>
-        
-        <div className="space-y-6 relative z-10">
-          <div>
-            <h4 className="text-2xl font-serif font-bold tracking-tight text-white mb-2">Análise Estratégica</h4>
-            <div className="h-1 w-20 bg-rodovia-verde rounded-full" />
-          </div>
-          
-          <p className="font-serif text-2xl leading-relaxed text-zinc-300 italic">
-            "A expansão de <span className="text-white font-bold underline decoration-rodovia-verde decoration-4">49.2% no lucro líquido</span> é reflexo direto do programa de eficiência em manutenção, que reduziu custos em 17.2%, compensando a volatilidade do diesel. A alavancagem operacional permitiu que o lucro crescesse 3x mais rápido que a receita bruta."
-          </p>
-          
-          <div className="flex flex-wrap gap-6 pt-4">
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-rodovia-verde animate-pulse" />
-              <span className="font-mono text-xs uppercase text-zinc-400">Manutenção Otimizada</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-rodovia-verde" />
-              <span className="font-mono text-xs uppercase text-zinc-400">Mix de Serviços +4.2%</span>
-            </div>
-            <div className="flex items-center gap-3">
-              <div className="w-3 h-3 rounded-full bg-destructive" />
-              <span className="font-mono text-xs uppercase text-zinc-400">Inflação Diesel (Risco)</span>
-            </div>
-          </div>
-        </div>
-      </motion.section>
     </div>
   );
 }

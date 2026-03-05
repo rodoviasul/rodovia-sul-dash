@@ -196,24 +196,6 @@ export default function CashFlowDashboard() {
               </p>
             </div>
           </div>
-
-          <motion.div 
-            whileHover={{ y: -5 }}
-            className="bg-rodovia-verde text-white p-8 rounded-[40px] shadow-[0_20px_40px_rgba(36,172,132,0.1)] relative overflow-hidden group"
-          >
-            <div className="relative z-10">
-              <h4 className="font-serif font-bold text-2xl tracking-tight flex items-center gap-3">
-                <ShieldCheck className="w-6 h-6" /> Liquidez Corrente
-              </h4>
-              <p className="text-lg mt-4 font-serif italic leading-relaxed font-medium">
-                "O índice de liquidez corrente está em <span className="underline decoration-white/40 decoration-2">1.85</span>. A empresa possui fôlego financeiro para suportar as operações sem captação externa por 120 dias."
-              </p>
-              <div className="mt-6 flex items-center gap-2">
-                <Badge className="bg-white/20 text-white border-none font-mono text-[10px]">ALTA SOLVÊNCIA</Badge>
-              </div>
-            </div>
-            <Landmark className="absolute bottom-[-20px] right-[-20px] w-32 h-32 opacity-10 group-hover:rotate-12 transition-transform duration-700" />
-          </motion.div>
         </div>
       </section>
     </div>

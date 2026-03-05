@@ -17,8 +17,12 @@ export interface ContaERP {
 }
 
 export const getContasERP = async (): Promise<ContaERP[]> => {
-  // Voltando para o padrão sem parâmetros para evitar erro 500
-  const response = await api.get('/tabcontas');
+  // Solicitando limit=9999 para garantir o carregamento de todas as contas
+  const response = await api.get('/tabcontas', {
+    params: {
+      limit: 9999,
+    },
+  });
   
   // A API retorna { table: "...", count: N, data: [...] }
   return response.data.data || []; 

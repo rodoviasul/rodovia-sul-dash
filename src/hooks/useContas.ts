@@ -1,6 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { getContasERP, ContaERP } from '../services/api';
+
+const CACHE_KEY_ERP = 'rodovia_sul_erp_contas';
+const CACHE_KEY_TIMESTAMP = 'rodovia_sul_erp_last_sync';
 
 export interface ContaUnificada extends ContaERP {
   // Configuração (IDs Relacionais)
@@ -18,19 +21,40 @@ export const useContas = () => {
   const [contas, setContas] = useState<ContaUnificada[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [lastSync, setLastSync] = useState<string | null>(null);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async (forceRefresh = false) => {
     try {
       setLoading(true);
       setError(null);
 
-      // 1. Busca dados do ERP (API Legada)
-      const contasERP = await getContasERP();
+      let contasERP: ContaERP[] = [];
+      const cachedERP = localStorage.getItem(CACHE_KEY_ERP);
+      const cachedTime = localStorage.getItem(CACHE_KEY_TIMESTAMP);
 
-      // 2. Busca configurações do Supabase (Inteligência)
+      // 1. Lógica de Cache para o ERP
+      if (!forceRefresh && cachedERP && cachedTime) {
+        try {
+          contasERP = JSON.parse(cachedERP);
+          setLastSync(cachedTime);
+        } catch (e) {
+          console.error('Erro ao ler cache:', e);
+          contasERP = await getContasERP();
+        }
+      } else {
+        // Busca dados frescos do ERP
+        contasERP = await getContasERP();
+        const now = new Date().toLocaleString('pt-BR');
+        localStorage.setItem(CACHE_KEY_ERP, JSON.stringify(contasERP));
+        localStorage.setItem(CACHE_KEY_TIMESTAMP, now);
+        setLastSync(now);
+      }
+
+      // 2. Busca configurações do Supabase (Sempre busca o mapeamento mais recente)
       const { data: configs, error: sbError } = await supabase
         .from('config_contas_gerencial')
-        .select('*');
+        .select('*')
+        .limit(10000);
 
       if (sbError) throw sbError;
 
@@ -62,11 +86,11 @@ export const useContas = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [fetchData]);
 
   // Função para salvar uma configuração individual
   const salvarConfiguracao = async (conta: ContaUnificada, novosDados: Partial<ContaUnificada>) => {
@@ -101,5 +125,12 @@ export const useContas = () => {
     }
   };
 
-  return { contas, loading, error, salvarConfiguracao, refresh: fetchData };
+  return { 
+    contas, 
+    loading, 
+    error, 
+    lastSync,
+    salvarConfiguracao, 
+    refresh: () => fetchData(true) 
+  };
 };
