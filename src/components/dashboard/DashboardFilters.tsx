@@ -12,7 +12,12 @@ export default function DashboardFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const period = searchParams.get("period") || "2026";
-  const month = searchParams.get("month") || "Fev";
+  const month = searchParams.get("month") || "Jan";
+
+  const months = [
+    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
+    "Jul", "Ago", "Set", "Out", "Nov", "Dez"
+  ];
 
   const setFilter = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
@@ -52,10 +57,9 @@ export default function DashboardFilters() {
             <ChevronDown className="w-3 h-3 opacity-30" />
           </SelectTrigger>
           <SelectContent className="bg-popover border-border text-popover-foreground min-w-[80px]">
-            <SelectItem value="Jan">Jan</SelectItem>
-            <SelectItem value="Fev">Fev</SelectItem>
-            <SelectItem value="Mar">Mar</SelectItem>
-            <SelectItem value="Abr">Abr</SelectItem>
+            {months.map((m) => (
+              <SelectItem key={m} value={m}>{m}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>

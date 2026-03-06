@@ -54,7 +54,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
-const ITENS_POR_PAGINA = 10;
+const ITENS_POR_PAGINA = 20;
 
 // Mapa de ícones (Mapeado pelo NOME da categoria para facilitar visualização)
 const ICONES_CATEGORIA: Record<string, { icon: any, color: string }> = {
@@ -68,6 +68,8 @@ const ICONES_CATEGORIA: Record<string, { icon: any, color: string }> = {
   'Investimento': { icon: LineChart, color: 'text-indigo-600' },
   'Receita Não Operacional': { icon: Coins, color: 'text-teal-600' },
   'Movimento de Capital': { icon: ArrowLeftRight, color: 'text-gray-500' },
+  'Receitas': { icon: Wallet, color: 'text-emerald-600' },
+  'Despesas': { icon: TrendingUp, color: 'text-orange-500' },
 };
 
 const ConfiguracaoContas: React.FC = () => {
@@ -181,7 +183,13 @@ const ConfiguracaoContas: React.FC = () => {
   const getBadgeInfo = (categoriaId: string | null) => {
     const nome = getCategoriaNome(categoriaId);
     if (!nome) return null;
-    return ICONES_CATEGORIA[nome] || { icon: AlertCircle, color: 'text-zinc-400' };
+    
+    // Busca insensível a maiúsculas/minúsculas
+    const key = Object.keys(ICONES_CATEGORIA).find(
+      k => k.toLowerCase() === nome.toLowerCase()
+    );
+    
+    return key ? ICONES_CATEGORIA[key] : { icon: AlertCircle, color: 'text-zinc-400' };
   };
 
   const subcategoriasDisponiveis = useMemo(() => {
@@ -256,17 +264,20 @@ const ConfiguracaoContas: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-full px-12 pb-4 space-y-4 overflow-hidden">
+    <div className="flex flex-col h-full px-4 pb-0 space-y-2 overflow-hidden">
       {/* Editorial Header - Fixed Area */}
-      <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-end gap-4 border-b border-rodovia-verde/20 pb-4">
-        <div className="space-y-1">
+      <div className="flex-shrink-0 flex flex-col md:flex-row justify-between items-end gap-2 border-b border-rodovia-verde/20 pb-2">
+        <div className="space-y-0.5">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-px bg-rodovia-verde" />
-            <span className="text-[10px] font-mono font-black text-rodovia-verde uppercase tracking-[0.4em]">Gestão de Dados</span>
+            <div className="w-6 h-px bg-rodovia-verde" />
+            <span className="text-[9px] font-mono font-black text-rodovia-verde uppercase tracking-[0.4em]">Gestão de Dados</span>
           </div>
-          <h1 className="text-3xl font-black tracking-tighter text-rodovia-azul uppercase">
+          <h1 className="text-2xl font-black tracking-tighter text-rodovia-azul uppercase">
             Plano de Contas <span className="text-rodovia-verde">Gerencial</span>
           </h1>
+          <p className="text-zinc-500 text-[11px] font-medium max-w-xl">
+            Classifique suas contas contábeis nas categorias gerenciais da sua DRE.
+          </p>
         </div>
         
         <div className="flex items-center gap-1 bg-white/50 backdrop-blur-md p-1 rounded-xl border border-black/5">
@@ -307,36 +318,36 @@ const ConfiguracaoContas: React.FC = () => {
       </div>
 
       {/* Advanced Toolbar - Fixed Area */}
-      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-12 gap-4">
+      <div className="flex-shrink-0 grid grid-cols-1 md:grid-cols-12 gap-2">
         <div className="md:col-span-7 relative group">
-          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500 group-focus-within:text-rodovia-verde transition-colors">
-            <Search className="w-4 h-4" />
+          <div className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-rodovia-verde transition-colors">
+            <Search className="w-3.5 h-3.5" />
           </div>
           <Input 
             placeholder="BUSCAR CONTA..." 
             value={busca}
             onChange={(e) => { setBusca(e.target.value); setPaginaAtual(1); }}
-            className="pl-10 h-12 bg-white rounded-xl border-2 border-zinc-200 text-[11px] font-black uppercase tracking-widest shadow-md focus:border-rodovia-verde transition-all text-rodovia-azul"
+            className="pl-11 h-10 bg-white rounded-xl border-2 border-zinc-100 text-[9px] font-black uppercase tracking-widest shadow-sm focus:border-rodovia-verde transition-all text-rodovia-azul"
           />
         </div>
         
-        <div className="md:col-span-3 grid grid-cols-[1fr_auto_1fr] items-center bg-white rounded-xl border-2 border-zinc-200 shadow-md h-12 overflow-hidden">
+        <div className="md:col-span-3 grid grid-cols-[1fr_auto_1fr] items-center bg-white rounded-xl border-2 border-zinc-100 shadow-sm h-10 overflow-hidden">
           <div className="flex flex-col items-center justify-center">
-            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Total</span>
-            <span className="text-base font-black text-rodovia-azul">{contas.length}</span>
+            <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Total</span>
+            <span className="text-sm font-black text-rodovia-azul">{contas.length}</span>
           </div>
-          <div className="w-px h-6 bg-zinc-200" />
+          <div className="w-px h-5 bg-zinc-200" />
           <div className="flex flex-col items-center justify-center">
-            <span className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">Filtrados</span>
-            <span className="text-base font-black text-rodovia-verde">{dadosFiltrados.length}</span>
+            <span className="text-[7px] font-black text-zinc-500 uppercase tracking-widest">Filtrados</span>
+            <span className="text-sm font-black text-rodovia-verde">{dadosFiltrados.length}</span>
           </div>
         </div>
 
-        <div className="md:col-span-2 flex flex-col gap-1">
+        <div className="md:col-span-2 flex flex-col gap-0.5">
           <Button 
             onClick={handleRefresh}
             disabled={sincronizando}
-            className="h-9 bg-rodovia-azul hover:bg-rodovia-azul/90 text-white rounded-xl font-black text-[9px] uppercase tracking-widest shadow-xl transition-all hover:scale-105 active:scale-95"
+            className="h-8 bg-rodovia-azul hover:bg-rodovia-azul/90 text-white rounded-xl font-black text-[8px] uppercase tracking-widest shadow-md transition-all hover:scale-105 active:scale-95"
           >
             {sincronizando ? (
               <Loader2 className="w-3 h-3 animate-spin mr-2" />
@@ -354,39 +365,39 @@ const ConfiguracaoContas: React.FC = () => {
       </div>
 
       {/* Tabela Container - Scrollable Area */}
-      <div className="flex-1 min-h-0 bg-white/90 backdrop-blur-2xl rounded-[2rem] border border-black/5 overflow-hidden flex flex-col">
+      <div className="flex-1 min-h-0 bg-white/90 backdrop-blur-2xl rounded-2xl border border-black/5 overflow-hidden flex flex-col">
         <Table containerClassName="flex-1 overflow-auto">
           <TableHeader className="sticky top-0 z-20">
               <TableRow className="border-b-0 shadow-md">
                 <TableHead 
-                  className="w-[100px] bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  className="w-[100px] bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort('concod')}
                 >
                   <div className="flex items-center">CÓDIGO <SortIcon coluna="concod" /></div>
                 </TableHead>
                 <TableHead 
-                  className="bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  className="bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort('condescr')}
                 >
                   <div className="flex items-center">CONTA (ERP) <SortIcon coluna="condescr" /></div>
                 </TableHead>
                 <TableHead 
-                  className="w-[200px] bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  className="w-[200px] bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort('dre_categoria_id')}
                 >
                   <div className="flex items-center">CATEGORIA (DRE) <SortIcon coluna="dre_categoria_id" /></div>
                 </TableHead>
                 <TableHead 
-                  className="w-[180px] bg-slate-900 text-white font-bold tracking-wider py-3 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  className="w-[180px] bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort('dre_subcategoria_id')}
                 >
                   <div className="flex items-center">DETALHE <SortIcon coluna="dre_subcategoria_id" /></div>
                 </TableHead>
                 <TableHead 
-                  className="w-[100px] text-right bg-slate-900 text-white font-bold tracking-wider py-3 pr-6 text-[10px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  className="w-[100px] text-center bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort('status')}
                 >
-                  <div className="flex items-center justify-end">STATUS <SortIcon coluna="status" /></div>
+                  <div className="flex items-center justify-center">STATUS <SortIcon coluna="status" /></div>
                 </TableHead>
                 <TableHead className="w-[40px] bg-slate-900"></TableHead>
               </TableRow>
@@ -416,38 +427,38 @@ const ConfiguracaoContas: React.FC = () => {
                     )}
                     onClick={() => abrirEdicao(conta)}
                   >
-                    <TableCell className="font-mono text-[10px] font-medium text-zinc-500 border-r border-zinc-100 py-3">
+                    <TableCell className="font-mono text-[9px] font-medium text-zinc-400 border-r border-zinc-50 py-1.5">
                       {conta.concod}
                     </TableCell>
-                    <TableCell className="font-bold text-xs text-zinc-700 group-hover:text-rodovia-verde transition-colors border-r border-zinc-100 py-3 uppercase">
+                    <TableCell className="font-bold text-[11px] text-zinc-600 group-hover:text-rodovia-verde transition-colors border-r border-zinc-50 py-1.5 uppercase">
                       {conta.condescr}
                     </TableCell>
-                    <TableCell className="border-r border-zinc-100 py-3">
+                    <TableCell className="border-r border-zinc-50 py-1.5">
                       {categoriaNome ? (
-                        <Badge variant="outline" className="font-normal text-[9px] bg-white border-zinc-300 gap-1 pl-1 pr-2 py-0.5 shadow-sm">
-                           {BadgeIcon && <BadgeIcon className={cn("w-3 h-3", badgeInfo?.color)} />}
-                           <span className="text-zinc-700 font-medium uppercase">{categoriaNome}</span>
+                        <Badge variant="outline" className="font-normal text-[8px] bg-white border-zinc-200 gap-1 pl-1 pr-2 py-0 shadow-sm">
+                           {BadgeIcon && <BadgeIcon className={cn("w-2.5 h-2.5", badgeInfo?.color)} />}
+                           <span className="text-zinc-600 font-medium uppercase">{categoriaNome}</span>
                         </Badge>
                       ) : (
-                        <span className="text-zinc-300 text-[10px] italic">-</span>
+                        <span className="text-zinc-300 text-[9px] italic">-</span>
                       )}
                     </TableCell>
-                    <TableCell className="text-[10px] text-zinc-600 border-r border-zinc-100 py-3 uppercase">
+                    <TableCell className="text-[10px] text-zinc-500 border-r border-zinc-50 py-1.5 uppercase">
                       {subcategoriaNome || '-'}
                     </TableCell>
-                    <TableCell className="text-right border-r border-zinc-100 pr-6 py-3">
+                    <TableCell className="text-center border-r border-zinc-50 py-1.5">
                       {conta.precisa_configurar ? (
-                        <Badge variant="secondary" className="text-[8px] bg-amber-50 text-amber-600 border-amber-200 font-black">
+                        <Badge variant="secondary" className="text-[7px] bg-amber-50 text-amber-600 border-amber-200 font-black">
                           PENDENTE
                         </Badge>
                       ) : (
-                        <Badge variant="secondary" className="text-[8px] bg-green-50 text-green-600 border-green-200 font-black">
+                        <Badge variant="secondary" className="text-[7px] bg-green-50 text-green-600 border-green-100 font-black">
                           OK
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell className="py-3">
-                      <Settings2 className="w-3.5 h-3.5 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                    <TableCell className="py-1.5">
+                      <Settings2 className="w-3 h-3 text-zinc-300 group-hover:text-zinc-500 transition-colors" />
                     </TableCell>
                   </TableRow>
                 )})
@@ -525,34 +536,38 @@ const ConfiguracaoContas: React.FC = () => {
 
       {/* Sheet de Edição (Painel Lateral) */}
       <Sheet open={!!contaEditando} onOpenChange={(open) => !open && setContaEditando(null)}>
-        <SheetContent className="w-[400px] sm:w-[540px]">
-          <SheetHeader>
-            <SheetTitle className="text-xl font-bold flex items-center gap-2">
-              <span className="text-rodovia-verde">#</span> {contaEditando?.condescr}
+        <SheetContent className="w-[400px] sm:w-[540px] border-l border-zinc-100 shadow-2xl p-0 flex flex-col overflow-hidden">
+          <SheetHeader className="p-8 pb-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-px bg-rodovia-verde" />
+              <span className="text-[9px] font-mono font-black text-rodovia-verde uppercase tracking-[0.4em]">Configuração Gerencial</span>
+            </div>
+            <SheetTitle className="text-2xl font-black text-rodovia-azul uppercase tracking-tighter">
+              {contaEditando?.condescr}
             </SheetTitle>
-            <SheetDescription>
-              Código ERP: {contaEditando?.concod} | Tipo Original: {contaEditando?.contip}
+            <SheetDescription className="text-[10px] font-bold uppercase tracking-widest text-zinc-400">
+              CÓDIGO ERP: {contaEditando?.concod} | TIPO ORIGINAL: {contaEditando?.contip}
             </SheetDescription>
           </SheetHeader>
 
-          <div className="py-6 space-y-6">
+          <div className="flex-1 overflow-y-auto px-8 py-4 space-y-6">
             {/* DRE - Categoria Principal */}
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Categoria (DRE)</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Categoria (DRE)</Label>
               <Select 
                 value={formConfig.dre_categoria_id || ''} 
                 onValueChange={(val) => setFormConfig({ ...formConfig, dre_categoria_id: val, dre_subcategoria_id: '' })}
               >
-                <SelectTrigger className="h-12 text-base">
-                  <SelectValue placeholder="Selecione a categoria..." />
+                <SelectTrigger className="h-14 bg-zinc-50 border-2 border-zinc-100 rounded-2xl font-black text-[11px] uppercase tracking-widest focus:border-rodovia-verde focus:ring-0 transition-all">
+                  <SelectValue placeholder="SELECIONE A CATEGORIA..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-2xl border-none shadow-2xl">
                   {categoriasDRE.map((cat) => {
-                    const info = ICONES_CATEGORIA[cat.nome] || { icon: AlertCircle, color: 'text-zinc-500' };
+                    const info = getBadgeInfo(cat.id) || { icon: AlertCircle, color: 'text-zinc-500' };
                     const Icon = info.icon;
                     return (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2 font-medium">
+                      <SelectItem key={cat.id} value={cat.id} className="focus:bg-rodovia-verde/10 focus:text-rodovia-verde rounded-xl py-3 px-4">
+                        <div className="flex items-center gap-2 font-black text-[11px] uppercase tracking-widest">
                           <Icon className={cn("w-4 h-4", info.color)} />
                           <span>{cat.nome}</span>
                         </div>
@@ -565,29 +580,32 @@ const ConfiguracaoContas: React.FC = () => {
 
             {/* DRE - Detalhe (Dinâmico) */}
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Sub-Categoria (Detalhe)</Label>
+              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Sub-Categoria (Detalhe)</Label>
               {subcategoriasDisponiveis.length > 0 ? (
                 <Select
                   value={formConfig.dre_subcategoria_id || ''}
                   onValueChange={(val) => setFormConfig({ ...formConfig, dre_subcategoria_id: val })}
                   disabled={!formConfig.dre_categoria_id}
                 >
-                  <SelectTrigger className="h-12 text-base">
-                    <SelectValue placeholder="Selecione o detalhe..." />
+                  <SelectTrigger className="h-14 bg-zinc-50 border-2 border-zinc-100 rounded-2xl font-black text-[11px] uppercase tracking-widest focus:border-rodovia-verde focus:ring-0 transition-all">
+                    <SelectValue placeholder="SELECIONE O DETALHE..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-2xl border-none shadow-2xl">
                     {subcategoriasDisponiveis.map((sub) => (
-                      <SelectItem key={sub.id} value={sub.id}>
-                        {sub.nome}
+                      <SelectItem key={sub.id} value={sub.id} className="focus:bg-rodovia-verde/10 focus:text-rodovia-verde rounded-xl py-3 px-4">
+                        <div className="font-black text-[11px] uppercase tracking-widest">
+                          {sub.nome}
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               ) : (
-                <div className="p-3 bg-zinc-50 rounded-md border border-zinc-200 text-sm text-zinc-500 italic text-center">
+                <div className="p-4 bg-zinc-50 rounded-2xl border-2 border-zinc-100 text-[10px] font-black uppercase tracking-widest text-zinc-400 text-center flex items-center justify-center gap-2">
+                  <Search className="w-3.5 h-3.5 opacity-30" />
                   {formConfig.dre_categoria_id 
-                    ? "Nenhuma subcategoria cadastrada para esta categoria." 
-                    : "Selecione uma categoria primeiro."}
+                    ? "NENHUM DETALHE CADASTRADO" 
+                    : "SELECIONE UMA CATEGORIA PRIMEIRO"}
                 </div>
               )}
             </div>
@@ -595,17 +613,17 @@ const ConfiguracaoContas: React.FC = () => {
             <div className="grid grid-cols-2 gap-4">
               {/* Fluxo de Caixa - Tipo */}
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Tipo Fluxo</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Tipo Fluxo</Label>
                 <Select 
                   value={formConfig.fluxo_tipo_id || ''} 
                   onValueChange={(val) => setFormConfig({ ...formConfig, fluxo_tipo_id: val, fluxo_categoria_id: '' })}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
+                  <SelectTrigger className="h-14 bg-zinc-50 border-2 border-zinc-100 rounded-2xl font-black text-[11px] uppercase tracking-widest focus:border-rodovia-verde focus:ring-0 transition-all">
+                    <SelectValue placeholder="TIPO..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-2xl border-none shadow-2xl">
                     {tiposFluxo.map((tipo) => (
-                      <SelectItem key={tipo.id} value={tipo.id}>
+                      <SelectItem key={tipo.id} value={tipo.id} className="focus:bg-rodovia-verde/10 focus:text-rodovia-verde rounded-xl py-3 px-4 font-black text-[11px] uppercase tracking-widest">
                         {tipo.nome}
                       </SelectItem>
                     ))}
@@ -615,18 +633,18 @@ const ConfiguracaoContas: React.FC = () => {
 
               {/* Fluxo de Caixa - Categoria */}
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest text-zinc-500 font-bold">Categoria Fluxo</Label>
+                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Categoria Fluxo</Label>
                 <Select 
                   value={formConfig.fluxo_categoria_id || ''} 
                   onValueChange={(val) => setFormConfig({ ...formConfig, fluxo_categoria_id: val })}
                   disabled={!formConfig.fluxo_tipo_id}
                 >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione..." />
+                  <SelectTrigger className="h-14 bg-zinc-50 border-2 border-zinc-100 rounded-2xl font-black text-[11px] uppercase tracking-widest focus:border-rodovia-verde focus:ring-0 transition-all">
+                    <SelectValue placeholder="CATEGORIA..." />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-2xl border-none shadow-2xl">
                     {categoriasFluxoDisponiveis.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>
+                      <SelectItem key={cat.id} value={cat.id} className="focus:bg-rodovia-verde/10 focus:text-rodovia-verde rounded-xl py-3 px-4 font-black text-[11px] uppercase tracking-widest">
                         {cat.nome}
                       </SelectItem>
                     ))}
@@ -636,18 +654,18 @@ const ConfiguracaoContas: React.FC = () => {
             </div>
           </div>
 
-          <SheetFooter>
+          <SheetFooter className="bg-zinc-50 p-8 mt-auto flex-shrink-0">
             <Button 
               onClick={salvar} 
               disabled={salvando || !formConfig.dre_categoria_id || !formConfig.dre_subcategoria_id}
-              className="w-full bg-rodovia-verde hover:bg-rodovia-verde/90 text-white h-12 text-lg font-bold tracking-wide"
+              className="w-full bg-rodovia-verde hover:bg-rodovia-verde/90 text-white h-14 text-xs font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl shadow-rodovia-verde/20 transition-all active:scale-95"
             >
               {salvando ? (
                 <Loader2 className="w-5 h-5 animate-spin mr-2" />
               ) : (
                 <Save className="w-5 h-5 mr-2" />
               )}
-              SALVAR CONFIGURAÇÃO
+              Salvar Configuração
             </Button>
           </SheetFooter>
         </SheetContent>

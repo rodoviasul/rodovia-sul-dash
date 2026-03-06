@@ -246,18 +246,9 @@ export default function SettingsLayout() {
         </header>
 
         {/* Page Content Area - Fixed Height with Sidebar Alignment */}
-        <div className="flex-1 min-h-0 py-4">
+        <div className="flex-1 min-h-0 pt-4 pb-8">
           <Outlet />
         </div>
-
-        {/* Minimal Footer */}
-        <footer className="flex-shrink-0 px-12 py-4 flex justify-between items-center border-t border-black/5 opacity-40">
-          <p className="text-[9px] font-mono uppercase tracking-[0.3em]">RODOVIA SUL CORE v1.0.0</p>
-          <div className="flex items-center gap-2">
-             <div className="w-1.5 h-1.5 rounded-full bg-rodovia-verde animate-pulse" />
-             <span className="text-[9px] font-mono uppercase tracking-widest">SISTEMA ONLINE</span>
-          </div>
-        </footer>
       </main>
     </div>
   );
