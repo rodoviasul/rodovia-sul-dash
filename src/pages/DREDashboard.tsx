@@ -30,6 +30,7 @@ const DRERow = ({
   isHeader = false,
   isTotal = false,
   isAnnual = false,
+  className,
   onClick
 }: { 
   code: string; 
@@ -42,6 +43,7 @@ const DRERow = ({
   isHeader?: boolean;
   isTotal?: boolean;
   isAnnual?: boolean;
+  className?: string;
   onClick?: () => void;
 }) => (
   <motion.div 
@@ -52,7 +54,8 @@ const DRERow = ({
       isAnnual ? "grid-cols-[100px_minmax(200px,1fr)_repeat(12,100px)]" : "grid-cols-12",
       isHeader ? 'bg-slate-900 font-mono text-[10px] uppercase tracking-widest text-white sticky top-0 z-10' : 'hover:bg-accent cursor-pointer group',
       isTotal ? 'bg-muted/30 font-bold' : '',
-      level === 1 && !isHeader ? 'font-serif text-lg font-bold text-foreground' : 'font-sans text-sm text-muted-foreground'
+      level === 1 && !isHeader ? 'font-serif text-lg font-bold text-foreground' : 'font-sans text-sm text-muted-foreground',
+      className
     )}
     onClick={onClick}
   >
