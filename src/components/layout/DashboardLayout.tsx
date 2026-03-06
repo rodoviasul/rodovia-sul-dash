@@ -76,7 +76,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           playsInline
           className="w-full h-full object-cover transition-opacity duration-1000 opacity-70 grayscale"
         >
-          <source src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/fundo.mp4" type="video/mp4" />
+          <source src="https://pub-d9db78d936464174b9a91bdd40fe3805.r2.dev/utils/fundo.mp4" type="video/mp4" />
         </video>
         {/* Gradient overlays to ensure readability */}
         <div className="absolute inset-0 bg-gradient-to-b from-[#f8f9fa] via-transparent to-[#f8f9fa]" />

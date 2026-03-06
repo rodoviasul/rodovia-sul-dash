@@ -72,7 +72,7 @@ export default function SettingsLayout() {
           playsInline
           className="w-full h-full object-cover opacity-70 grayscale transition-opacity duration-1000"
         >
-          <source src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/fundo.mp4" type="video/mp4" />
+          <source src="https://pub-d9db78d936464174b9a91bdd40fe3805.r2.dev/utils/fundo.mp4" type="video/mp4" />
         </video>
         <div className="absolute inset-0 bg-gradient-to-b from-[#f8f9fa] via-[#f8f9fa]/40 to-[#f8f9fa]" />
       </div>

@@ -64,7 +64,7 @@ export default function Login() {
           playsInline
           className="w-full h-full object-cover opacity-70 grayscale"
         >
-          <source src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/fundo.mp4" type="video/mp4" />
+          <source src="https://pub-d9db78d936464174b9a91bdd40fe3805.r2.dev/utils/fundo.mp4" type="video/mp4" />
         </video>
         {/* Gradient overlay to ensure cozy feel */}
         <div className="absolute inset-0 bg-gradient-to-br from-rodovia-azul/40 via-transparent to-rodovia-verde/20" />
