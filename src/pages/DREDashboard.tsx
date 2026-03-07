@@ -289,7 +289,10 @@ const KPICard = ({
   highlight = false,
   storytelling,
   calculationDetail,
-  avDetail
+  avDetail,
+  isComparisonMode,
+  p1Label,
+  p2Label
 }: { 
   label: string; 
   value: number; 
@@ -300,6 +303,9 @@ const KPICard = ({
   storytelling: string;
   calculationDetail: string;
   avDetail: string;
+  isComparisonMode?: boolean;
+  p1Label?: string;
+  p2Label?: string;
 }) => {
   const [isFlipped, setIsFlipped] = useState(false);
   const variation = previousValue !== 0 ? ((value - previousValue) / Math.abs(previousValue)) * 100 : 0;
@@ -310,7 +316,7 @@ const KPICard = ({
   const variant = isNegative ? 'danger' : (highlight ? 'success' : 'info');
 
   return (
-    <div className="relative h-[220px] lg:h-[240px] xl:h-[260px] w-full [perspective:1000px]">
+    <div className="relative h-[180px] lg:h-[200px] xl:h-[220px] w-full [perspective:1000px]">
       <motion.div
         className="w-full h-full relative [transform-style:preserve-3d] cursor-pointer"
         animate={{ rotateY: isFlipped ? 180 : 0 }}
@@ -320,7 +326,7 @@ const KPICard = ({
         {/* Front Side */}
         <div 
           className={cn(
-            "absolute inset-0 [backface-visibility:hidden] p-3 sm:p-4 lg:p-6 rounded-2xl border flex flex-col h-full overflow-hidden",
+            "absolute inset-0 [backface-visibility:hidden] p-3 rounded-xl border flex flex-col h-full overflow-hidden",
             "bg-white border-black/[0.03] shadow-[0_10px_40px_-15px_rgba(0,0,0,0.08)]",
             highlight && !isNegative && "ring-2 ring-rodovia-verde/20 border-rodovia-verde/10",
             isNegative && "ring-2 ring-red-500/10 border-red-500/20 shadow-red-500/5"
@@ -329,54 +335,98 @@ const KPICard = ({
           {/* Background Ghosted Icon */}
           <KPIIcon icon={Icon} variant={variant} />
 
-          {/* Variação Badge */}
-          <div className={cn(
-            "absolute top-2 right-2 sm:top-4 sm:right-4 z-20 flex items-center gap-0.5 sm:gap-1 px-1.5 py-0.5 sm:px-2 sm:py-1 rounded-lg text-[9px] sm:text-[10px] font-mono font-black shadow-sm",
-            isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
-          )}>
-            {isPositive ? <TrendingUp className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" /> : <TrendingDown className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5" />}
-            {Math.abs(variation).toFixed(1)}%
-          </div>
-
-          {/* Title Centered with Padding */}
-          <div className="flex flex-col items-center text-center gap-0.5 sm:gap-1 relative z-10 mb-2 sm:mb-4 mt-4 sm:mt-8">
-            <div className="space-y-0.5 sm:space-y-1">
+          {/* Header Fixo com Título e Linha Divisória */}
+          <div className="w-full flex flex-col items-center relative z-10 mb-2 pt-1">
+            <div className="h-[32px] flex items-center justify-center w-full px-2">
               <span className={cn(
-                "block font-mono text-[9px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] transition-colors leading-tight",
+                "block font-mono text-[9px] sm:text-[11px] font-black uppercase tracking-[0.15em] sm:tracking-[0.25em] transition-colors leading-tight text-center line-clamp-2",
                 isNegative ? "text-red-600" : "text-zinc-800 group-hover:text-rodovia-azul"
               )}>
                 {label}
               </span>
-              <p className="text-[8px] sm:text-[10px] text-zinc-500 font-bold italic leading-tight max-w-[140px] sm:max-w-[200px] mx-auto opacity-80 line-clamp-2">
+            </div>
+            
+            {/* Linha Divisória Sutil */}
+            <div className="w-12 h-px bg-zinc-200 mt-2" />
+
+            {/* Oculta storytelling no modo comparação para dar espaço */}
+            {!isComparisonMode && (
+              <p className="mt-2 text-[8px] sm:text-[10px] text-zinc-500 font-bold italic leading-tight max-w-[140px] sm:max-w-[200px] mx-auto opacity-80 line-clamp-2 text-center h-[24px]">
                 {storytelling}
               </p>
-            </div>
+            )}
           </div>
 
-          {/* Main Value & Progress */}
-          <div className="mt-auto relative z-10 flex flex-col items-center w-full">
-            <h3 className={cn(
-              "text-[16px] sm:text-[18px] lg:text-[20px] xl:text-[22px] font-mono font-black tracking-tighter leading-none mb-2 sm:mb-4 whitespace-nowrap",
-              isNegative ? "text-red-600" : (highlight ? "text-rodovia-verde" : "text-rodovia-azul")
-            )}>
-              {value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
-            </h3>
-            
-            <div className="w-full space-y-1 sm:space-y-2">
-              <div className="flex justify-between items-end">
-                <span className="text-[8px] sm:text-[10px] font-mono font-black text-zinc-400 uppercase tracking-widest truncate mr-1">% s/ Venda</span>
-                <span className={cn("text-[9px] sm:text-[11px] font-mono font-black", isNegative ? "text-red-600" : "text-zinc-900")}>{av.toFixed(1)}%</span>
+
+
+          {/* Main Content Area */}
+          <div className="mt-auto relative z-10 w-full">
+            {isComparisonMode ? (
+              // Layout de Comparação Vertical Limpo
+              <div className="flex flex-col gap-4 py-2">
+                {/* Bloco Atual (Hero) */}
+                <div className="flex flex-col items-center">
+                  <span className="text-[8px] font-black uppercase tracking-[0.1em] text-zinc-400 mb-1 max-w-[180px] truncate">
+                    {p1Label || "REF. 01"}
+                  </span>
+                  <span className={cn(
+                    "text-xl sm:text-2xl font-mono font-black tracking-tighter leading-none",
+                    isNegative ? "text-red-600" : (highlight ? "text-rodovia-verde" : "text-rodovia-azul")
+                  )}>
+                    {value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+                  </span>
+                </div>
+
+                {/* Badge de Variação Centralizado */}
+                <div className="flex justify-center -my-2 relative z-10">
+                  <div className={cn(
+                    "flex items-center gap-1.5 px-3 py-1 rounded-full shadow-sm border border-white/50 backdrop-blur-sm",
+                    isPositive ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                  )}>
+                    {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                    <span className="text-[11px] font-black">{Math.abs(variation).toFixed(1)}%</span>
+                  </div>
+                </div>
+
+                {/* Bloco Anterior (Secundário) */}
+                <div className="flex flex-col items-center opacity-60">
+                  <span className={cn(
+                    "text-sm sm:text-base font-mono font-bold tracking-tighter leading-none text-zinc-500 line-through decoration-zinc-300/50"
+                  )}>
+                    {previousValue.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+                  </span>
+                  <span className="text-[8px] font-black uppercase tracking-[0.1em] text-zinc-400 mt-1 max-w-[180px] truncate">
+                    {p2Label || "BASE 02"}
+                  </span>
+                </div>
               </div>
-              <div className="h-1.5 sm:h-2.5 w-full bg-zinc-100/80 rounded-full overflow-hidden border border-black/[0.02]">
-                <div 
-                  className={cn(
-                    "h-full rounded-full transition-all duration-1000 ease-out", 
-                    isNegative ? "bg-red-500 shadow-red-500/20" : (highlight ? "bg-rodovia-verde shadow-rodovia-verde/20" : "bg-rodovia-azul shadow-rodovia-azul/20")
-                  )}
-                  style={{ width: `${Math.min(Math.abs(av), 100)}%` }}
-                />
+            ) : (
+              // Layout Padrão (Valor Único)
+              <div className="flex flex-col items-center w-full">
+                <h3 className={cn(
+                  "text-[16px] sm:text-[18px] lg:text-[20px] xl:text-[22px] font-mono font-black tracking-tighter leading-none mb-2 sm:mb-4 whitespace-nowrap",
+                  isNegative ? "text-red-600" : (highlight ? "text-rodovia-verde" : "text-rodovia-azul")
+                )}>
+                  {value.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+                </h3>
+                
+                <div className="w-full space-y-1 sm:space-y-2">
+                  <div className="flex justify-between items-end">
+                    <span className="text-[8px] sm:text-[10px] font-mono font-black text-zinc-400 uppercase tracking-widest truncate mr-1">% S/ RECEITA BRUTA</span>
+                    <span className={cn("text-[9px] sm:text-[11px] font-mono font-black", isNegative ? "text-red-600" : "text-zinc-900")}>{av.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-1.5 sm:h-2.5 w-full bg-zinc-200 rounded-full overflow-hidden border border-black/5">
+                    <div 
+                      className={cn(
+                        "h-full rounded-full transition-all duration-1000 ease-out", 
+                        isNegative ? "bg-red-500 shadow-red-500/20" : (highlight ? "bg-rodovia-verde shadow-rodovia-verde/20" : "bg-rodovia-azul shadow-rodovia-azul/20")
+                      )}
+                      style={{ width: `${Math.min(Math.abs(av), 100)}%` }}
+                    />
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className={cn(
@@ -385,10 +435,10 @@ const KPICard = ({
           )} />
         </div>
 
-        {/* Back Side */}
+        {/* Back Side (Mantido igual) */}
         <div 
           className={cn(
-            "absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] p-6 rounded-2xl border flex flex-col h-full items-center text-center",
+            "absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] p-3 rounded-xl border flex flex-col h-full items-center text-center",
             "bg-slate-900 border-slate-800 text-white shadow-xl hover:bg-slate-800/95 transition-all z-30"
           )}
         >
@@ -408,7 +458,7 @@ const KPICard = ({
             <div className="space-y-2">
               <div className="flex items-center justify-center gap-2">
                 <PieChart className="w-3 h-3 text-rodovia-verde" />
-                <span className="text-[9px] font-mono font-black text-rodovia-verde uppercase tracking-[0.3em]">Peso s/ Venda</span>
+                <span className="text-[9px] font-mono font-black text-rodovia-verde uppercase tracking-[0.3em]">Peso s/ Rec. Bruta</span>
               </div>
               <p className="text-[10px] font-bold text-slate-200 leading-snug px-1">
                 {avDetail}
@@ -524,14 +574,26 @@ const ComparisonPanel = ({
 
   const options = getPeriodOptions();
 
+  // Helper para obter o label da perspectiva temporal (Mês, Bimestre, etc)
+  const getTimeLabel = () => {
+    switch (timePerspective) {
+      case 'month': return 'Mês';
+      case 'bimestre': return 'Bimestre';
+      case 'trimestre': return 'Trimestre';
+      case 'semestre': return 'Semestre';
+      case 'year': return 'Ano';
+      default: return 'Período';
+    }
+  };
+
   return (
     <motion.div 
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
-      className="bg-white p-5 rounded-[2rem] border border-black/[0.05] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.08)] mb-8 relative"
+      className="bg-white p-3 rounded-xl border border-black/[0.05] shadow-[0_15px_50px_-15px_rgba(0,0,0,0.08)] mb-3 relative"
     >
-      <div className="flex flex-col lg:flex-row items-center gap-6">
+      <div className="flex flex-col lg:flex-row items-center gap-3">
         {/* P1 Section */}
         <div className="flex-1 w-full flex items-center gap-4">
           <div className="shrink-0 flex flex-col items-center gap-1">
@@ -551,7 +613,7 @@ const ComparisonPanel = ({
             />
             {timePerspective !== 'year' && (
               <ModernSelect 
-                label={timePerspective === 'month' ? 'Mês' : timePerspective.charAt(0).toUpperCase() + timePerspective.slice(1)}
+                label={getTimeLabel()}
                 value={p1.value}
                 onChange={(val) => setP1({ ...p1, value: val })}
                 options={options}
@@ -587,7 +649,7 @@ const ComparisonPanel = ({
             />
             {timePerspective !== 'year' && (
               <ModernSelect 
-                label={timePerspective === 'month' ? 'Mês' : timePerspective.charAt(0).toUpperCase() + timePerspective.slice(1)}
+                label={getTimeLabel()}
                 value={p2.value}
                 onChange={(val) => setP2({ ...p2, value: val })}
                 options={options}
@@ -601,8 +663,10 @@ const ComparisonPanel = ({
   );
 };
 
+import { useFilter } from "@/contexts/FilterContext";
+
 export default function DREDashboard() {
-  const [searchParams] = useSearchParams();
+  const { period: year, month: monthLabel } = useFilter();
   const { contas, loading: loadingContas } = useContas();
   const { categoriasDRE, subcategoriasDRE, loading: loadingDominios } = useDominios();
   
@@ -612,7 +676,7 @@ export default function DREDashboard() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isAnnualView, setIsAnnualView] = useState(false);
   const [isComparisonMode, setIsComparisonMode] = useState(false);
-  const [compP1, setCompP1] = useState<{ value: string | number; year: string }>({ value: searchParams.get("month") || "Jan", year: searchParams.get("period") || "2026" });
+  const [compP1, setCompP1] = useState<{ value: string | number; year: string }>({ value: monthLabel, year: year });
   const [compP2, setCompP2] = useState<{ value: string | number; year: string }>({ value: "Jan", year: "2025" });
   const [timePerspective, setTimePerspective] = useState<TimePerspective>('month');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -626,9 +690,6 @@ export default function DREDashboard() {
     contasIds: (number | string)[];
     dateRange: { start: string; end: string };
   } | null>(null);
-
-  const year = searchParams.get("period") || "2026";
-  const monthLabel = searchParams.get("month") || "Jan";
 
   useEffect(() => {
     // Reset values when perspective changes to avoid index/month mismatch
@@ -1168,124 +1229,162 @@ export default function DREDashboard() {
 
   const isLoading = loadingContas || loadingDominios || loadingMov;
 
-  // KPIs Estratégicos (Financeiro Sênior)
-  const kpis = useMemo(() => {
-    const findRow = (name: string) => dreData.find(d => d.nome.trim().toLowerCase() === name.toLowerCase());
-    
-    const getVal = (name: string) => {
-      const row = findRow(name);
-      if (row) return row.current || 0;
-      
-      // Fallbacks para nomes específicos do banco
-      if (name.toLowerCase() === "ebitda") return findRow("EBITDA Gerencial")?.current || 0;
-      if (name.toLowerCase() === "resultado líquido") return findRow("Resultado Líquido do Período")?.current || 0;
-      if (name.toLowerCase() === "despesas operacionais") {
-        return (findRow("Despesa Fixa")?.current || 0) + (findRow("Despesa Variável")?.current || 0);
+    // Helper para formatar o label do período (P1 e P2)
+    const getPeriodLabel = (p: { value: string | number, year: string }) => {
+      if (timePerspective === 'month') {
+        // Se for string ("Jan", "Fev"), usa o MONTH_MAP
+        if (typeof p.value === 'string') {
+           // O MONTH_MAP retorna 0-based index, precisamos usar para pegar o nome completo
+           const idx = MONTH_MAP[p.value];
+           if (idx !== undefined) return `${MONTH_LABELS_FULL[idx]} de ${p.year}`;
+           // Fallback se não achar no mapa
+           return `${p.value} de ${p.year}`;
+        }
+        // Se por acaso vier número
+        return `${MONTH_LABELS_FULL[p.value as number]} de ${p.year}`;
       }
-      return 0;
+      if (timePerspective === 'year') {
+        return `Ano de ${p.year}`;
+      }
+      if (timePerspective === 'bimestre') return `${BIMESTRE_LABELS[p.value as number]} de ${p.year}`;
+      if (timePerspective === 'trimestre') return `${TRIMESTRE_LABELS[p.value as number]} de ${p.year}`;
+      if (timePerspective === 'semestre') return `${SEMESTRE_LABELS[p.value as number]} de ${p.year}`;
+      return `${p.value}/${p.year}`;
     };
 
-    const getPrev = (name: string) => {
-      const row = findRow(name);
-      if (row) return row.previous || 0;
-      
-      if (name.toLowerCase() === "ebitda") return findRow("EBITDA Gerencial")?.previous || 0;
-      if (name.toLowerCase() === "resultado líquido") return findRow("Resultado Líquido do Período")?.previous || 0;
-      if (name.toLowerCase() === "despesas operacionais") {
-        return (findRow("Despesa Fixa")?.previous || 0) + (findRow("Despesa Variável")?.previous || 0);
-      }
-      return 0;
+    const getComparisonSubtitle = () => {
+      if (!isComparisonMode) return null;
+      return `${getPeriodLabel(compP1)} vs ${getPeriodLabel(compP2)}`;
     };
 
-    const getAV = (name: string) => {
-      const row = findRow(name);
-      if (row) return row.av || 0;
+    // KPIs Estratégicos (Financeiro Sênior)
+    const kpis = useMemo(() => {
+      const findRow = (name: string) => dreData.find(d => d.nome.trim().toLowerCase() === name.toLowerCase());
       
-      if (name.toLowerCase() === "ebitda") return findRow("EBITDA Gerencial")?.av || 0;
-      if (name.toLowerCase() === "resultado líquido") return findRow("Resultado Líquido do Período")?.av || 0;
-      if (name.toLowerCase() === "despesas operacionais") {
-        return (findRow("Despesa Fixa")?.av || 0) + (findRow("Despesa Variável")?.av || 0);
-      }
-      return 0;
-    };
+      const getVal = (name: string) => {
+        const row = findRow(name);
+        if (row) return row.current || 0;
+        
+        // Fallbacks para nomes específicos do banco
+        if (name.toLowerCase() === "ebitda") return findRow("EBITDA Gerencial")?.current || 0;
+        if (name.toLowerCase() === "resultado líquido") return findRow("Resultado Líquido do Período")?.current || 0;
+        if (name.toLowerCase() === "despesas operacionais") {
+          return (findRow("Despesa Fixa")?.current || 0) + (findRow("Despesa Variável")?.current || 0);
+        }
+        return 0;
+      };
 
-    return [
-      { 
-        label: "Receita Bruta", 
-        value: getVal("Receita Bruta"), 
-        previousValue: getPrev("Receita Bruta"),
-        av: getAV("Receita Bruta"), 
-        icon: BarChart3,
-        storytelling: "Volume total de vendas e fretes realizados",
-        calculationDetail: "Soma de todos os recebimentos brutos de fretes e vendas de mercadorias, antes de qualquer dedução ou imposto.",
-        avDetail: "Como base do DRE, representa 100% da operação. Todos os outros pesos são calculados em relação a este valor."
-      },
-      { 
-        label: "Receita Líquida", 
-        value: getVal("Receita Líquida"), 
-        previousValue: getPrev("Receita Líquida"),
-        av: getAV("Receita Líquida"), 
-        icon: TrendingUp,
-        storytelling: "Faturamento real após impostos e deduções",
-        calculationDetail: "Receita Bruta menos as deduções (Impostos sobre vendas, devoluções e cancelamentos).",
-        avDetail: "Representa quanto do faturamento bruto realmente entra para a empresa após as obrigações tributárias iniciais."
-      },
-      { 
-        label: "Margem Bruta", 
-        value: getVal("Margem Bruta"), 
-        previousValue: getPrev("Margem Bruta"),
-        av: getAV("Margem Bruta"), 
-        icon: BarChart3,
-        storytelling: "Eficiência direta da operação de transporte",
-        calculationDetail: "Receita Líquida menos os Custos Diretos (Custo Fixo + Custo Variável da operação).",
-        avDetail: "Indica a lucratividade direta da operação antes de considerar as despesas administrativas e de vendas."
-      },
-      { 
-        label: "Margem de Contribuição", 
-        value: getVal("Margem de Contribuição"), 
-        previousValue: getPrev("Margem de Contribuição"),
-        av: getAV("Margem de Contribuição"), 
-        icon: BarChart3,
-        storytelling: "O que sobra para pagar os custos fixos e gerar lucro",
-        calculationDetail: "Margem Bruta menos as Despesas Variáveis (comissões, taxas de cartão, etc).",
-        avDetail: "É o valor que 'sobra' para cobrir as despesas fixas da empresa e gerar o lucro final."
-      },
-      { 
-        label: "EBITDA", 
-        value: getVal("EBITDA"), 
-        previousValue: getPrev("EBITDA"),
-        av: getAV("EBITDA"), 
-        icon: TrendingUp,
-        storytelling: "Potencial de geração de caixa operacional",
-        calculationDetail: "Margem de Contribuição menos as Despesas Fixas Operacionais.",
-        avDetail: "Mede a capacidade de geração de caixa apenas pela operação, desconsiderando impostos e efeitos financeiros."
-      },
-      { 
-        label: "Despesas Operacionais", 
-        value: getVal("Despesas Operacionais"), 
-        previousValue: getPrev("Despesas Operacionais"),
-        av: getAV("Despesas Operacionais"), 
-        icon: Layers,
-        storytelling: "Custo para manter a estrutura funcionando",
-        calculationDetail: "Soma de todas as Despesas Fixas e Variáveis administrativas da empresa.",
-        avDetail: "Mostra o peso da estrutura administrativa e comercial em relação ao faturamento total."
-      },
-      { 
-        label: "Resultado Líquido", 
-        value: getVal("Resultado Líquido"), 
-        previousValue: getPrev("Resultado Líquido"),
-        av: getAV("Resultado Líquido"), 
-        highlight: true, 
-        icon: PieChart,
-        storytelling: "O lucro real que sobra no bolso da empresa",
-        calculationDetail: "EBITDA somado ao Resultado Financeiro e ajustes não operacionais, subtraindo impostos finais.",
-        avDetail: "É a Lucratividade Final. Indica quantos centavos de cada Real vendido realmente sobraram como lucro."
-      },
-    ];
-  }, [dreData]);
+      const getPrev = (name: string) => {
+        const row = findRow(name);
+        if (row) return row.previous || 0;
+        
+        if (name.toLowerCase() === "ebitda") return findRow("EBITDA Gerencial")?.previous || 0;
+        if (name.toLowerCase() === "resultado líquido") return findRow("Resultado Líquido do Período")?.previous || 0;
+        if (name.toLowerCase() === "despesas operacionais") {
+          return (findRow("Despesa Fixa")?.previous || 0) + (findRow("Despesa Variável")?.previous || 0);
+        }
+        return 0;
+      };
+
+      const getAV = (name: string) => {
+        const row = findRow(name);
+        if (row) return row.av || 0;
+        
+        if (name.toLowerCase() === "ebitda") return findRow("EBITDA Gerencial")?.av || 0;
+        if (name.toLowerCase() === "resultado líquido") return findRow("Resultado Líquido do Período")?.av || 0;
+        if (name.toLowerCase() === "despesas operacionais") {
+          return (findRow("Despesa Fixa")?.av || 0) + (findRow("Despesa Variável")?.av || 0);
+        }
+        return 0;
+      };
+
+      const p1Label = isComparisonMode ? getPeriodLabel(compP1) : "";
+      const p2Label = isComparisonMode ? getPeriodLabel(compP2) : "";
+
+      return [
+        { 
+          label: "Receita Bruta", 
+          value: getVal("Receita Bruta"), 
+          previousValue: getPrev("Receita Bruta"),
+          av: getAV("Receita Bruta"), 
+          icon: BarChart3,
+          storytelling: "Volume total de vendas e fretes realizados",
+          calculationDetail: "Soma de todos os recebimentos brutos de fretes e vendas de mercadorias, antes de qualquer dedução ou imposto.",
+          avDetail: "Como base do DRE, representa 100% da operação. Todos os outros pesos são calculados em relação a este valor.",
+          p1Label, p2Label
+        },
+        { 
+          label: "Receita Líquida", 
+          value: getVal("Receita Líquida"), 
+          previousValue: getPrev("Receita Líquida"),
+          av: getAV("Receita Líquida"), 
+          icon: TrendingUp,
+          storytelling: "Faturamento real após impostos e deduções",
+          calculationDetail: "Receita Bruta menos as deduções (Impostos sobre vendas, devoluções e cancelamentos).",
+          avDetail: "Representa quanto do faturamento bruto realmente entra para a empresa após as obrigações tributárias iniciais.",
+          p1Label, p2Label
+        },
+        { 
+          label: "Margem Bruta", 
+          value: getVal("Margem Bruta"), 
+          previousValue: getPrev("Margem Bruta"),
+          av: getAV("Margem Bruta"), 
+          icon: BarChart3,
+          storytelling: "Eficiência direta da operação de transporte",
+          calculationDetail: "Receita Líquida menos os Custos Diretos (Custo Fixo + Custo Variável da operação).",
+          avDetail: "Indica a lucratividade direta da operação antes de considerar as despesas administrativas e de vendas.",
+          p1Label, p2Label
+        },
+        { 
+          label: "Marg. Contribuição", 
+          value: getVal("Margem de Contribuição"), 
+          previousValue: getPrev("Margem de Contribuição"),
+          av: getAV("Margem de Contribuição"), 
+          icon: BarChart3,
+          storytelling: "O que sobra para pagar os custos fixos e gerar lucro",
+          calculationDetail: "Margem Bruta menos as Despesas Variáveis (comissões, taxas de cartão, etc).",
+          avDetail: "É o valor que 'sobra' para cobrir as despesas fixas da empresa e gerar o lucro final.",
+          p1Label, p2Label
+        },
+        { 
+          label: "EBITDA", 
+          value: getVal("EBITDA"), 
+          previousValue: getPrev("EBITDA"),
+          av: getAV("EBITDA"), 
+          icon: TrendingUp,
+          storytelling: "Potencial de geração de caixa operacional",
+          calculationDetail: "Margem de Contribuição menos as Despesas Fixas Operacionais.",
+          avDetail: "Mede a capacidade de geração de caixa apenas pela operação, desconsiderando impostos e efeitos financeiros.",
+          p1Label, p2Label
+        },
+        { 
+          label: "Desp. Operacionais", 
+          value: getVal("Despesas Operacionais"), 
+          previousValue: getPrev("Despesas Operacionais"),
+          av: getAV("Despesas Operacionais"), 
+          icon: Layers,
+          storytelling: "Custo para manter a estrutura funcionando",
+          calculationDetail: "Soma de todas as Despesas Fixas e Variáveis administrativas da empresa.",
+          avDetail: "Mostra o peso da estrutura administrativa e comercial em relação ao faturamento total.",
+          p1Label, p2Label
+        },
+        { 
+          label: "Resultado Líquido", 
+          value: getVal("Resultado Líquido"), 
+          previousValue: getPrev("Resultado Líquido"),
+          av: getAV("Resultado Líquido"), 
+          highlight: true, 
+          icon: PieChart,
+          storytelling: "O lucro real que sobra no bolso da empresa",
+          calculationDetail: "EBITDA somado ao Resultado Financeiro e ajustes não operacionais, subtraindo impostos finais.",
+          avDetail: "É a Lucratividade Final. Indica quantos centavos de cada Real vendido realmente sobraram como lucro.",
+          p1Label, p2Label
+        },
+      ];
+    }, [dreData, isComparisonMode, compP1, compP2, timePerspective]);
 
   return (
-    <div className="space-y-6 pb-20">
+    <div className="space-y-3 pb-20">
       <AnimatePresence>
         {isLoading && <DRELoadingScreen />}
       </AnimatePresence>
@@ -1297,7 +1396,7 @@ export default function DREDashboard() {
       />
 
       {/* Modern Header Section */}
-      <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white p-6 rounded-[2.5rem] border border-black/[0.03] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] relative overflow-hidden">
+      <section className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 bg-white p-3 rounded-xl border border-black/[0.03] shadow-[0_20px_60px_-15px_rgba(0,0,0,0.06)] relative overflow-hidden">
         {/* Background Accent */}
         <div className="absolute top-0 right-0 w-64 h-64 bg-rodovia-verde/5 rounded-full blur-3xl -mr-32 -mt-32" />
         
@@ -1387,7 +1486,7 @@ export default function DREDashboard() {
       </AnimatePresence>
 
       {/* Strategic KPIs Section */}
-      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3 sm:gap-4 lg:gap-5">
+      <section className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-2 sm:gap-3">
         {kpis.map((kpi, i) => (
           <KPICard 
             key={i}
@@ -1400,12 +1499,46 @@ export default function DREDashboard() {
             storytelling={kpi.storytelling}
             calculationDetail={kpi.calculationDetail}
             avDetail={kpi.avDetail}
+            isComparisonMode={isComparisonMode}
+            p1Label={kpi.p1Label}
+            p2Label={kpi.p2Label}
           />
         ))}
       </section>
 
       {/* Professional DRE Table */}
-      <section className="bg-white border border-black/[0.03] rounded-2xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] relative overflow-hidden">
+      <section className="bg-white border border-black/[0.03] rounded-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] relative overflow-hidden flex flex-col">
+        {/* Table Header / Title Section */}
+        <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+          <div className="flex flex-col gap-1">
+            <h2 className="text-lg font-black tracking-tight text-rodovia-azul uppercase flex items-center gap-2">
+              <Layers className="w-5 h-5 text-rodovia-verde" />
+              Detalhamento <span className="text-rodovia-verde italic">Financeiro</span>
+            </h2>
+            <p className="text-[11px] text-zinc-400 font-bold uppercase tracking-widest pl-7">
+              {isComparisonMode 
+                ? (
+                  <>
+                    <span className="text-rodovia-azul">Comparativo:</span> {getComparisonSubtitle()}
+                  </>
+                )
+                : isAnnualView 
+                  ? `Visão Anual Consolidada de ${year}`
+                  : `Demonstrativo de ${timePerspective === 'month' ? `${MONTH_LABELS_FULL[MONTH_MAP[monthLabel]] || monthLabel} de ${year}` : `${timePerspective === 'year' ? 'Ano' : timePerspective} de ${year}`}`
+              }
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+             <div className="flex items-center gap-1.5 px-3 py-1 bg-white rounded-lg border border-zinc-200 shadow-sm">
+                <div className={`w-2 h-2 rounded-full ${isComparisonMode ? 'bg-purple-500' : 'bg-rodovia-verde'} animate-pulse`} />
+                <span className="text-[10px] font-mono font-bold text-zinc-500 uppercase">
+                  {isComparisonMode ? 'Modo Comparativo' : 'Tempo Real'}
+                </span>
+             </div>
+          </div>
+        </div>
+
         {error ? (
           <div className="p-20 flex flex-col items-center justify-center text-center gap-4">
             <AlertCircle className="w-12 h-12 text-destructive" />
@@ -1416,7 +1549,7 @@ export default function DREDashboard() {
         ) : (
           <div className={cn(
             "w-full overflow-auto max-h-[850px] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-200/50 hover:scrollbar-thumb-zinc-300",
-            timePerspective === 'year' && "max-w-[94vw] mx-auto"
+            timePerspective === 'year' && ""
           )}>
             <div className={cn(
               "pb-4",

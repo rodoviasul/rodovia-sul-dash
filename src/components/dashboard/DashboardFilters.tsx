@@ -1,20 +1,16 @@
-import { useSearchParams } from "react-router-dom";
 import { Filter } from "lucide-react";
 import { ModernSelect } from "@/components/ui/ModernSelect";
+import { useFilter } from "@/contexts/FilterContext";
 
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const MONTH_LABELS_FULL = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 export default function DashboardFilters() {
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const period = searchParams.get("period") || "2026";
-  const month = searchParams.get("month") || "Jan";
+  const { period, month, setPeriod, setMonth } = useFilter();
 
   const setFilter = (key: string, value: string) => {
-    const newParams = new URLSearchParams(searchParams);
-    newParams.set(key, value);
-    setSearchParams(newParams);
+    if (key === "period") setPeriod(value);
+    if (key === "month") setMonth(value);
   };
 
   const yearOptions = [

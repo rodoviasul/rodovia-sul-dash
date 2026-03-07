@@ -90,7 +90,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       {/* Main Content */}
       <main className="flex-1 relative z-10 flex flex-col">
         {/* Modern Sticky Header */}
-        <header className="sticky top-0 z-50 w-full px-8 py-3 backdrop-blur-xl border-b border-black/[0.03] bg-white/70 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)]">
+        <header className="sticky top-0 z-50 w-full px-4 py-2 backdrop-blur-xl border-b border-black/[0.03] bg-white/70 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)]">
           <div className="max-w-[1800px] mx-auto flex items-center justify-between">
             {/* Left: Brand & Title */}
             <div className="flex items-center gap-6 group cursor-pointer" onClick={() => navigate("/")}>
@@ -202,7 +202,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </header>
 
         {/* Content Area */}
-        <div className="px-12 py-8 flex-1">
+        <div className="p-3 flex-1">
           <div className="relative z-10">
             {children}
           </div>

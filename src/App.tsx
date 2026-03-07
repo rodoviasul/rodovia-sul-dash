@@ -13,11 +13,15 @@ import EstruturaFluxo from "@/pages/settings/EstruturaFluxo";
 import QueryTester from "@/pages/settings/QueryTester";
 import { Toaster } from "@/components/ui/sonner";
 
+import { FilterProvider } from "@/contexts/FilterContext";
+
 // Wrapper para layout do Dashboard
 const DashboardWrapper = () => (
-  <DashboardLayout>
-    <Outlet />
-  </DashboardLayout>
+  <FilterProvider>
+    <DashboardLayout>
+      <Outlet />
+    </DashboardLayout>
+  </FilterProvider>
 );
 
 export default function App() {
