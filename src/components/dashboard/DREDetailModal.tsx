@@ -133,6 +133,7 @@ export function DREDetailModal({ isOpen, onClose, data }: DREDetailModalProps) {
         where 
           cast(u.conta as varchar) in (${contasIdsStr})
           and m.movdatacxa between '${data.dateRange.start}' and '${data.dateRange.end}'
+          and u.valor > 0
         order by m.movdatacxa desc
       `;
 

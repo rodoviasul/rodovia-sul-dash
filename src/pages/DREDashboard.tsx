@@ -503,80 +503,9 @@ const DRELoadingScreen = () => {
   );
 };
 
+import { ModernSelect } from "@/components/ui/ModernSelect";
+
 const YEARS = ["2024", "2025", "2026"];
-
-const ModernSelect = ({ 
-  value, 
-  onChange, 
-  options, 
-  label,
-  variant = "azul" 
-}: { 
-  value: string | number, 
-  onChange: (val: any) => void, 
-  options: { label: string, value: any }[],
-  label: string,
-  variant?: "azul" | "verde"
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const selectedOption = options.find(opt => opt.value === value);
-
-  return (
-    <div className="relative flex-1 group">
-      <label className={cn(
-        "absolute -top-2 left-3 px-1.5 text-[8px] font-black uppercase tracking-widest z-10 rounded-full bg-white",
-        variant === "azul" ? "text-rodovia-azul" : "text-rodovia-verde"
-      )}>
-        {label}
-      </label>
-      
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className={cn(
-          "w-full h-10 px-4 rounded-xl flex items-center justify-between transition-all duration-300 border text-xs font-bold",
-          isOpen 
-            ? (variant === "azul" ? "border-rodovia-azul ring-2 ring-rodovia-azul/10 bg-white" : "border-rodovia-verde ring-2 ring-rodovia-verde/10 bg-white")
-            : "border-zinc-200 bg-white hover:border-zinc-300 text-zinc-700 shadow-sm"
-        )}
-      >
-        <span className="truncate">{selectedOption?.label || value}</span>
-        <ChevronDown className={cn("w-3.5 h-3.5 shrink-0 ml-2 transition-transform duration-300", isOpen && "rotate-180")} />
-      </button>
-
-      <AnimatePresence>
-        {isOpen && (
-          <>
-            <div className="fixed inset-0 z-30" onClick={() => setIsOpen(false)} />
-            <motion.div
-              initial={{ opacity: 0, y: 5, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 5, scale: 0.98 }}
-              className="absolute top-full mt-1.5 w-full bg-white rounded-xl border border-zinc-100 shadow-xl z-40 overflow-hidden py-1 max-h-60 overflow-y-auto"
-            >
-              {options.map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setIsOpen(false);
-                  }}
-                  className={cn(
-                    "w-full px-4 py-2 text-left text-[11px] font-bold transition-colors hover:bg-zinc-50",
-                    value === opt.value 
-                      ? (variant === "azul" ? "text-rodovia-azul bg-rodovia-azul/5" : "text-rodovia-verde bg-rodovia-verde/5")
-                      : "text-zinc-500"
-                  )}
-                >
-                  {opt.label}
-                </button>
-              ))}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 const ComparisonPanel = ({ 
   p1, p2, setP1, setP2, timePerspective, onClose 

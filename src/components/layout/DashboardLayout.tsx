@@ -112,8 +112,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 </h1>
                 <div className="flex items-center gap-2 mt-1.5">
                   <span className="text-[10px] font-mono font-black text-rodovia-verde uppercase tracking-[0.2em]">PERFORMANCE GERAL</span>
-                  <div className="w-1 h-1 rounded-full bg-zinc-300" />
-                  <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest font-bold">DASHBOARD v2.0</span>
                 </div>
               </div>
             </div>

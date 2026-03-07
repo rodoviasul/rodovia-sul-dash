@@ -1,12 +1,9 @@
 import { useSearchParams } from "react-router-dom";
-import { Filter, ChevronDown } from "lucide-react";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Filter } from "lucide-react";
+import { ModernSelect } from "@/components/ui/ModernSelect";
+
+const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+const MONTH_LABELS_FULL = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
 export default function DashboardFilters() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -14,54 +11,55 @@ export default function DashboardFilters() {
   const period = searchParams.get("period") || "2026";
   const month = searchParams.get("month") || "Jan";
 
-  const months = [
-    "Jan", "Fev", "Mar", "Abr", "Mai", "Jun", 
-    "Jul", "Ago", "Set", "Out", "Nov", "Dez"
-  ];
-
   const setFilter = (key: string, value: string) => {
     const newParams = new URLSearchParams(searchParams);
     newParams.set(key, value);
     setSearchParams(newParams);
   };
 
-  return (
-    <div className="flex items-center gap-1 bg-background/40 border border-border rounded-2xl p-1 h-full">
-      {/* Filters Label Button */}
-      <button className="flex items-center gap-2 px-5 py-1.5 hover:bg-muted transition-colors rounded-xl group">
-        <Filter className="w-3.5 h-3.5 text-rodovia-verde fill-rodovia-verde/20 group-hover:scale-110 transition-transform" />
-        <span className="text-[10px] font-mono font-black text-foreground/70 tracking-[0.2em]">FILTROS</span>
-      </button>
+  const yearOptions = [
+    { label: "2024", value: "2024" },
+    { label: "2025", value: "2025" },
+    { label: "2026", value: "2026" },
+  ];
 
-      {/* Year Selection */}
-      <div className="flex items-center">
-        <Select value={period} onValueChange={(v) => setFilter("period", v)}>
-          <SelectTrigger className="h-8 border-none bg-transparent focus:ring-0 text-[10px] font-mono font-bold text-muted-foreground hover:text-foreground transition-colors gap-1 px-3">
-            <SelectValue placeholder="Ano" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border text-popover-foreground min-w-[80px]">
-            <SelectItem value="2024">2024</SelectItem>
-            <SelectItem value="2025">2025</SelectItem>
-            <SelectItem value="2026">2026</SelectItem>
-          </SelectContent>
-        </Select>
+  const monthOptions = MONTH_LABELS.map((abbr, index) => ({
+    label: MONTH_LABELS_FULL[index],
+    value: abbr
+  }));
+
+  return (
+    <div className="flex items-center gap-3 bg-white/50 backdrop-blur-sm border border-white/20 rounded-2xl p-1.5 h-full shadow-sm">
+      {/* Filters Label Button */}
+      <div className="flex items-center gap-2 px-4 py-1.5 bg-rodovia-verde/10 rounded-xl">
+        <Filter className="w-3.5 h-3.5 text-rodovia-verde" />
+        <span className="text-[10px] font-mono font-black text-rodovia-verde tracking-[0.2em]">FILTROS</span>
       </div>
 
-      <span className="text-border text-[10px]">•</span>
+      <div className="h-8 w-px bg-zinc-200" />
+
+      {/* Year Selection */}
+      <div className="w-[80px]">
+        <ModernSelect
+          label="ANO"
+          value={period}
+          onChange={(v) => setFilter("period", v)}
+          options={yearOptions}
+          variant="verde"
+          className="min-w-0"
+        />
+      </div>
 
       {/* Month Selection */}
-      <div className="flex items-center mr-2">
-        <Select value={month} onValueChange={(v) => setFilter("month", v)}>
-          <SelectTrigger className="h-8 border-none bg-transparent focus:ring-0 text-[10px] font-mono font-bold text-muted-foreground hover:text-foreground transition-colors gap-1 px-3">
-            <SelectValue placeholder="Mês" />
-            <ChevronDown className="w-3 h-3 opacity-30" />
-          </SelectTrigger>
-          <SelectContent className="bg-popover border-border text-popover-foreground min-w-[80px]">
-            {months.map((m) => (
-              <SelectItem key={m} value={m}>{m}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+      <div className="w-[110px]">
+        <ModernSelect
+          label="MÊS"
+          value={month}
+          onChange={(v) => setFilter("month", v)}
+          options={monthOptions}
+          variant="verde"
+          className="min-w-0"
+        />
       </div>
     </div>
   );
