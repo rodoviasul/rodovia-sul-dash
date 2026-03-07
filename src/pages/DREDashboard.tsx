@@ -27,6 +27,7 @@ import { useDominios, CategoriaDRE } from "@/hooks/useDominios";
 import { executeQuery } from "@/services/api";
 import { cn } from "@/lib/utils";
 import { startOfMonth, endOfMonth, format, addMonths, subMonths, startOfYear, endOfYear, getYear, subYears } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 const MONTH_MAP: Record<string, number> = {
   "Jan": 0, "Fev": 1, "Mar": 2, "Abr": 3, "Mai": 4, "Jun": 5,
@@ -693,7 +694,7 @@ export default function DREDashboard() {
     title: string;
     value: number;
     dateLabel: string;
-    contasIds: number[];
+    contasIds: (number | string)[];
     dateRange: { start: string; end: string };
   } | null>(null);
 
