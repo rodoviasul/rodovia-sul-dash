@@ -5,13 +5,19 @@ import { supabase } from '../lib/supabase';
 export interface CategoriaDRE {
   id: string;
   nome: string;
+  nome_dre: string | null;
   ordem: number;
+  descricao: string | null;
+  dre: boolean;
+  tipo: 'CONTA' | 'SUBTOTAL';
+  formula: string | null;
 }
 
 export interface SubcategoriaDRE {
   id: string;
   categoria_id: string;
   nome: string;
+  descricao: string | null;
 }
 
 // Tipos para Fluxo de Caixa

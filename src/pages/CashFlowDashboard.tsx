@@ -7,10 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 const CashMetric = ({ label, value, subtext, icon: Icon, color, onClick }: any) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ scale: 1.02 }}
+  <div 
     onClick={onClick}
     className="bg-card border border-border p-6 rounded-[32px] flex items-start gap-4 cursor-pointer transition-all hover:border-rodovia-verde/30 shadow-sm hover:shadow-xl group"
   >
@@ -24,7 +21,7 @@ const CashMetric = ({ label, value, subtext, icon: Icon, color, onClick }: any) 
         {subtext}
       </p>
     </div>
-  </motion.div>
+  </div>
 );
 
 export default function CashFlowDashboard() {

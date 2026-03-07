@@ -6,8 +6,13 @@ import {
   Maximize2,
   Minimize2
 } from "lucide-react";
-import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import DashboardFilters from "@/components/dashboard/DashboardFilters";
 
@@ -66,7 +71,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   ];
 
   return (
-    <div className="flex min-h-screen transition-colors duration-500 relative bg-[#f8f9fa] text-[#1a1a1a]">
+    <div className="flex min-h-screen relative bg-[#f8f9fa] text-[#1a1a1a]">
       {/* Background Video Overlay */}
       <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
         <video
@@ -74,7 +79,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           loop
           muted
           playsInline
-          className="w-full h-full object-cover transition-opacity duration-1000 opacity-70 grayscale"
+          className="w-full h-full object-cover opacity-70 grayscale"
         >
           <source src="https://pub-d9db78d936464174b9a91bdd40fe3805.r2.dev/utils/fundo.mp4" type="video/mp4" />
         </video>
@@ -84,96 +89,125 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
       {/* Main Content */}
       <main className="flex-1 relative z-10 flex flex-col">
-        {/* Top Header Section */}
-        <div className="w-full px-12 pt-12 flex flex-col items-center gap-8 relative">
-          {/* Top Right Utility Buttons */}
-          <div className="absolute top-8 right-12 flex items-center gap-3">
-            <button 
-              onClick={toggleFullScreen}
-              className="flex items-center gap-2 px-4 py-2 border rounded-full transition-all group bg-white border-black/5 shadow-sm hover:shadow-md"
-            >
-              {isFullScreen ? (
-                <>
-                  <Minimize2 className="w-3.5 h-3.5 text-rodovia-verde transition-colors" />
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 group-hover:text-zinc-900">MINIMIZAR</span>
-                </>
-              ) : (
-                <>
-                  <Maximize2 className="w-3.5 h-3.5 text-rodovia-verde transition-colors" />
-                  <span className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 group-hover:text-zinc-900">MAXIMIZAR</span>
-                </>
-              )}
-            </button>
-
-            <Link to="/configuracao" className="flex items-center justify-center w-10 h-10 rounded-full border transition-all duration-300 bg-white border-black/5 shadow-sm hover:shadow-md">
-              <Settings className="w-4 h-4 text-rodovia-verde" />
-            </Link>
-
-            <button 
-              onClick={handleLogout}
-              className="flex items-center gap-2 px-4 py-2 border rounded-full transition-all group bg-white border-black/5 shadow-sm hover:bg-red-50 hover:border-red-100 shadow-red-100/20"
-            >
-              <LogOut className="w-3.5 h-3.5 text-red-500 group-hover:text-red-600 transition-colors" />
-              <span className="text-[10px] font-mono font-bold uppercase tracking-widest transition-colors text-zinc-400 group-hover:text-red-600">SAIR</span>
-            </button>
-          </div>
-
-          {/* Logo & Centered Green Title */}
-          <div className="flex flex-col items-center gap-4 text-center">
-            <div className="w-16 h-16 rounded-3xl bg-white shadow-2xl p-3 border border-black/5 flex items-center justify-center transition-all duration-500 hover:scale-110">
-              <img 
-                src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/logo-rodovia.png" 
-                alt="Rodovia Sul Logo" 
-                className="w-full h-full object-contain"
-              />
-            </div>
-            <h1 className="text-sm font-mono font-black uppercase tracking-[1em] transition-all duration-500 text-rodovia-verde">
-              PERFORMANCE GERAL RODOVIA SUL
-            </h1>
-          </div>
-
-          {/* Integrated HUD Bar (Tabs + Filters) */}
-          <div className="flex items-center gap-1 p-1 backdrop-blur-md border rounded-full transition-all duration-500 shadow-2xl bg-white/80 border-black/5 shadow-zinc-200">
-            {/* Navigation Tabs */}
-            <div className="flex items-center gap-0.5">
-              {menuItems.map((item) => {
-                const isActive = location.pathname === item.href;
-                return (
-                  <Link
-                    key={item.href}
-                    to={item.href}
-                    className={cn(
-                      "px-6 py-2.5 rounded-full text-[10px] font-mono font-bold tracking-[0.2em] transition-all duration-300",
-                      isActive 
-                        ? "bg-zinc-900 text-white shadow-lg"
-                        : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50"
-                    )}
-                  >
-                    {item.label}
-                  </Link>
-                );
-              })}
+        {/* Modern Sticky Header */}
+        <header className="sticky top-0 z-50 w-full px-8 py-3 backdrop-blur-xl border-b border-black/[0.03] bg-white/70 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07),0_4px_6px_-2px_rgba(0,0,0,0.05)]">
+          <div className="max-w-[1800px] mx-auto flex items-center justify-between">
+            {/* Left: Brand & Title */}
+            <div className="flex items-center gap-6 group cursor-pointer" onClick={() => navigate("/")}>
+              <div className="relative">
+                <div className="w-14 h-14 rounded-2xl bg-white shadow-lg p-2.5 border border-black/5 flex items-center justify-center group-hover:scale-105 group-hover:shadow-rodovia-verde/20 group-hover:shadow-2xl">
+                  <img 
+                    src="https://wnombkybmahknwcyzfqz.supabase.co/storage/v1/object/public/utils/logo-rodovia.png" 
+                    alt="Rodovia Sul Logo" 
+                    className="w-full h-full object-contain"
+                  />
+                </div>
+                {/* Status indicator */}
+                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-rodovia-verde border-2 border-white rounded-full shadow-sm" />
+              </div>
+              
+              <div className="flex flex-col">
+                <h1 className="text-sm font-black uppercase tracking-[0.4em] text-rodovia-azul leading-none group-hover:text-rodovia-verde">
+                  RODOVIA SUL
+                </h1>
+                <div className="flex items-center gap-2 mt-1.5">
+                  <span className="text-[10px] font-mono font-black text-rodovia-verde uppercase tracking-[0.2em]">PERFORMANCE GERAL</span>
+                  <div className="w-1 h-1 rounded-full bg-zinc-300" />
+                  <span className="text-[9px] font-mono text-zinc-400 uppercase tracking-widest font-bold">DASHBOARD v2.0</span>
+                </div>
+              </div>
             </div>
 
-            {/* Divider */}
-            <div className="h-6 w-px mx-2 bg-black/5" />
+            {/* Right: Navigation, Filters & Actions */}
+            <div className="flex items-center gap-3">
+              {/* Main Navigation HUD */}
+              <div className="flex items-center gap-1 p-1 bg-zinc-100/50 backdrop-blur-md border border-black/[0.03] rounded-2xl shadow-inner">
+                {/* Nav Tabs */}
+                <nav className="flex items-center gap-1 pr-2">
+                  {menuItems.map((item) => {
+                    const isActive = location.pathname === item.href;
+                    return (
+                      <Link
+                        key={item.href}
+                        to={item.href}
+                        className={cn(
+                          "relative px-5 py-2 rounded-2xl text-[10px] font-mono font-black tracking-widest overflow-hidden",
+                          isActive 
+                            ? "bg-rodovia-azul text-white shadow-lg shadow-rodovia-azul/20"
+                            : "text-zinc-400 hover:text-rodovia-azul hover:bg-white"
+                        )}
+                      >
+                        {item.label}
+                        {isActive && (
+                          <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-rodovia-verde" />
+                        )}
+                      </Link>
+                    );
+                  })}
+                </nav>
 
-            {/* Filter Component Integration */}
-            <DashboardFilters />
+                <div className="h-6 w-px bg-zinc-200 mx-1" />
+
+                {/* Filters Integrated */}
+                <DashboardFilters />
+              </div>
+
+              <div className="h-8 w-px bg-zinc-200 mx-2" />
+
+              {/* Action Buttons Group */}
+              <div className="flex items-center gap-2">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button 
+                        onClick={toggleFullScreen}
+                        className="flex items-center justify-center w-10 h-10 rounded-2xl border border-black/5 bg-white shadow-sm hover:shadow-md hover:bg-zinc-50 text-zinc-400 hover:text-rodovia-verde group"
+                      >
+                        {isFullScreen ? (
+                          <Minimize2 className="w-4 h-4" />
+                        ) : (
+                          <Maximize2 className="w-4 h-4 group-hover:scale-110" />
+                        )}
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent className="bg-zinc-900 text-white border-none text-[10px] font-mono font-bold">
+                      {isFullScreen ? "REDUZIR TELA" : "TELA CHEIA"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                <Link to="/configuracao">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <div className="flex items-center justify-center w-10 h-10 rounded-2xl border border-black/5 bg-white shadow-sm hover:shadow-md hover:bg-zinc-50 text-zinc-400 hover:text-rodovia-verde">
+                          <Settings className="w-4 h-4" />
+                        </div>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-zinc-900 text-white border-none text-[10px] font-mono font-bold">
+                        CONFIGURAÇÕES
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </Link>
+
+                <button 
+                  onClick={handleLogout}
+                  className="flex items-center gap-3 px-4 py-2 border border-black/5 rounded-2xl bg-white shadow-sm hover:bg-red-50 hover:border-red-100 hover:shadow-lg hover:shadow-red-500/10 group"
+                >
+                  <LogOut className="w-4 h-4 text-red-400 group-hover:text-red-500 group-hover:scale-110" />
+                  <span className="text-[10px] font-mono font-black uppercase tracking-widest text-zinc-400 group-hover:text-red-600">SAIR</span>
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
+        </header>
 
         {/* Content Area */}
         <div className="px-12 py-8 flex-1">
-          <motion.div 
-            key={location.pathname}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="relative z-10"
-          >
+          <div className="relative z-10">
             {children}
-          </motion.div>
+          </div>
         </div>
       </main>
     </div>

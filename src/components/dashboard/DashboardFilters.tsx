@@ -26,9 +26,9 @@ export default function DashboardFilters() {
   };
 
   return (
-    <div className="flex items-center gap-1 bg-background/40 border border-border rounded-full p-1 h-full">
+    <div className="flex items-center gap-1 bg-background/40 border border-border rounded-2xl p-1 h-full">
       {/* Filters Label Button */}
-      <button className="flex items-center gap-2 px-5 py-1.5 hover:bg-muted transition-colors rounded-full group">
+      <button className="flex items-center gap-2 px-5 py-1.5 hover:bg-muted transition-colors rounded-xl group">
         <Filter className="w-3.5 h-3.5 text-rodovia-verde fill-rodovia-verde/20 group-hover:scale-110 transition-transform" />
         <span className="text-[10px] font-mono font-black text-foreground/70 tracking-[0.2em]">FILTROS</span>
       </button>

@@ -13,14 +13,15 @@ import {
   Truck,
   Building2,
   Landmark,
-  LineChart,
-  Percent,
-  Coins,
+  LineChart, 
+  Percent, 
+  Coins, 
   TrendingUp,
-  ArrowLeftRight,
-  RefreshCw,
-  ArrowUp,
-  ArrowDown,
+  TrendingDown,
+  ArrowLeftRight, 
+  RefreshCw, 
+  ArrowUp, 
+  ArrowDown, 
   ArrowUpDown
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
@@ -67,7 +68,12 @@ const ICONES_CATEGORIA: Record<string, { icon: any, color: string }> = {
   'Despesa Financeira': { icon: Landmark, color: 'text-purple-600' },
   'Investimento': { icon: LineChart, color: 'text-indigo-600' },
   'Receita Não Operacional': { icon: Coins, color: 'text-teal-600' },
+  'Despesa Não Operacional': { icon: Coins, color: 'text-red-600' },
+  'Receita Financeira': { icon: Landmark, color: 'text-emerald-600' },
   'Movimento de Capital': { icon: ArrowLeftRight, color: 'text-gray-500' },
+  'Transferências Internas': { icon: ArrowLeftRight, color: 'text-blue-500' },
+  'Ajustes de Caixa': { icon: RefreshCw, color: 'text-zinc-500' },
+  'Ajuste de Caixa': { icon: RefreshCw, color: 'text-zinc-500' },
   'Receitas': { icon: Wallet, color: 'text-emerald-600' },
   'Despesas': { icon: TrendingUp, color: 'text-orange-500' },
 };
@@ -394,6 +400,12 @@ const ConfiguracaoContas: React.FC = () => {
                   <div className="flex items-center">DETALHE <SortIcon coluna="dre_subcategoria_id" /></div>
                 </TableHead>
                 <TableHead 
+                  className="w-[100px] bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
+                  onClick={() => handleSort('dre_sinal')}
+                >
+                  <div className="flex items-center">TIPO <SortIcon coluna="dre_sinal" /></div>
+                </TableHead>
+                <TableHead 
                   className="w-[100px] text-center bg-slate-900 text-white font-bold tracking-wider py-2 text-[9px] cursor-pointer hover:bg-slate-800 transition-colors"
                   onClick={() => handleSort('status')}
                 >
@@ -445,6 +457,21 @@ const ConfiguracaoContas: React.FC = () => {
                     </TableCell>
                     <TableCell className="text-[10px] text-zinc-500 border-r border-zinc-50 py-1.5 uppercase">
                       {subcategoriaNome || '-'}
+                    </TableCell>
+                    <TableCell className="border-r border-zinc-50 py-1.5">
+                      <div className="flex items-center gap-1.5">
+                        {conta.dre_sinal === 1 ? (
+                          <div className="flex items-center gap-1 text-emerald-600 font-bold text-[9px]">
+                            <TrendingUp className="w-3 h-3" />
+                            <span>ENTRADA</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-1 text-red-600 font-bold text-[9px]">
+                            <TrendingDown className="w-3 h-3" />
+                            <span>SAÍDA</span>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-center border-r border-zinc-50 py-1.5">
                       {conta.precisa_configurar ? (
@@ -562,7 +589,7 @@ const ConfiguracaoContas: React.FC = () => {
                   <SelectValue placeholder="SELECIONE A CATEGORIA..." />
                 </SelectTrigger>
                 <SelectContent className="rounded-2xl border-none shadow-2xl">
-                  {categoriasDRE.map((cat) => {
+                  {categoriasDRE.filter(cat => cat.tipo !== 'SUBTOTAL').map((cat) => {
                     const info = getBadgeInfo(cat.id) || { icon: AlertCircle, color: 'text-zinc-500' };
                     const Icon = info.icon;
                     return (
@@ -570,6 +597,9 @@ const ConfiguracaoContas: React.FC = () => {
                         <div className="flex items-center gap-2 font-black text-[11px] uppercase tracking-widest">
                           <Icon className={cn("w-4 h-4", info.color)} />
                           <span>{cat.nome}</span>
+                          {!cat.dre && (
+                            <Badge variant="outline" className="text-[6px] h-3 px-1 border-zinc-200 text-zinc-400 font-bold">OFF-DRE</Badge>
+                          )}
                         </div>
                       </SelectItem>
                     );
@@ -608,6 +638,33 @@ const ConfiguracaoContas: React.FC = () => {
                     : "SELECIONE UMA CATEGORIA PRIMEIRO"}
                 </div>
               )}
+            </div>
+
+            {/* DRE - Natureza (Entrada/Saída) */}
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Natureza (Entrada/Saída)</Label>
+              <Select 
+                value={formConfig.dre_sinal?.toString() || ''} 
+                onValueChange={(val) => setFormConfig({ ...formConfig, dre_sinal: parseInt(val) })}
+              >
+                <SelectTrigger className="h-14 bg-zinc-50 border-2 border-zinc-100 rounded-2xl font-black text-[11px] uppercase tracking-widest focus:border-rodovia-verde focus:ring-0 transition-all">
+                  <SelectValue placeholder="SELECIONE A NATUREZA..." />
+                </SelectTrigger>
+                <SelectContent className="rounded-2xl border-none shadow-2xl">
+                  <SelectItem value="1" className="focus:bg-emerald-500/10 focus:text-emerald-600 rounded-xl py-3 px-4">
+                    <div className="flex items-center gap-2 font-black text-[11px] uppercase tracking-widest">
+                      <TrendingUp className="w-4 h-4 text-emerald-600" />
+                      <span>ENTRADA (SOMAR)</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="-1" className="focus:bg-red-500/10 focus:text-red-600 rounded-xl py-3 px-4">
+                    <div className="flex items-center gap-2 font-black text-[11px] uppercase tracking-widest">
+                      <TrendingDown className="w-4 h-4 text-red-600" />
+                      <span>SAÍDA (SUBTRAIR)</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

@@ -27,7 +27,8 @@ export const initDuckDB = async () => {
         const bundle = await duckdb.selectBundle(MANUAL_BUNDLES);
 
         const worker = new Worker(bundle.mainWorker!);
-        const logger = new duckdb.ConsoleLogger();
+        // Logger silencioso para evitar poluição no console
+        const logger = { log: () => {} } as any;
         db = new duckdb.AsyncDuckDB(logger, worker);
         await db.instantiate(bundle.mainModule, bundle.pthreadWorker);
 
@@ -110,7 +111,18 @@ export const executeLocalQuery = async (sql: string): Promise<{ data: any[], col
     // Ajusta a query para apontar para o S3 se necessário
     const bucket = import.meta.env.VITE_S3_BUCKET;
     const s3Path = `s3://${bucket}/`;
-    const tablesToReplace = ['tabmovimento', 'tabreceb', 'tabdespesas', 'tabcontas', 'tabbancos'];
+    const tablesToReplace = [
+        'tabmovimento', 
+        'tabreceb', 
+        'tabdespesas', 
+        'tabcontas', 
+        'tabbancos', 
+        'tabfornecedores',
+        'tabclientes',
+        'tabhistoricos',
+        'tabfaturas',
+        'tabfiliais'
+    ];
     
     let finalSql = sql;
     tablesToReplace.forEach(table => {

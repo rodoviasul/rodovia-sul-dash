@@ -25,10 +25,7 @@ const KPICard = ({
   highlight?: boolean;
   onClick: () => void;
 }) => (
-  <motion.div 
-    initial={{ opacity: 0, y: 20 }}
-    animate={{ opacity: 1, y: 0 }}
-    whileHover={{ y: -5 }}
+  <div 
     onClick={onClick}
     className={cn(
       "p-6 rounded-3xl relative overflow-hidden group cursor-pointer transition-all duration-300 border backdrop-blur-sm",
@@ -67,7 +64,7 @@ const KPICard = ({
 
     {/* Subtle gradient overlay */}
     <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-  </motion.div>
+  </div>
 );
 
 export default function MasterDashboard() {
