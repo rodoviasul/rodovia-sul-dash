@@ -682,8 +682,8 @@ export default function DREDashboard() {
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isAnnualView, setIsAnnualView] = useState(false);
   const [isComparisonMode, setIsComparisonMode] = useState(false);
-  const [compP1, setCompP1] = useState({ value: searchParams.get("month") || "Jan", year: searchParams.get("period") || "2026" });
-  const [compP2, setCompP2] = useState({ value: "Jan", year: "2025" });
+  const [compP1, setCompP1] = useState<{ value: string | number; year: string }>({ value: searchParams.get("month") || "Jan", year: searchParams.get("period") || "2026" });
+  const [compP2, setCompP2] = useState<{ value: string | number; year: string }>({ value: "Jan", year: "2025" });
   const [timePerspective, setTimePerspective] = useState<TimePerspective>('month');
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   
