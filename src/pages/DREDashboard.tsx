@@ -36,10 +36,11 @@ const MONTH_MAP: Record<string, number> = {
 const MONTH_LABELS_FULL = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 const MONTH_LABELS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const TRIMESTRE_LABELS = ["1º Tri", "2º Tri", "3º Tri", "4º Tri"];
+const BIMESTRE_LABELS = ["1º Bim", "2º Bim", "3º Bim", "4º Bim", "5º Bim", "6º Bim"];
 const SEMESTRE_LABELS = ["1º Semestre", "2º Semestre"];
 const YEARS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
 
-type TimePerspective = 'month' | 'trimestre' | 'semestre' | 'year' | 'multi-year';
+type TimePerspective = 'month' | 'bimestre' | 'trimestre' | 'semestre' | 'year' | 'multi-year';
 
 import { DREDetailModal } from "@/components/dashboard/DREDetailModal";
 
@@ -90,10 +91,11 @@ const DRERow = ({
   
   // Define o grid dinamicamente baseado na perspectiva
 const gridClass = useMemo(() => {
-  if (isComparisonMode) return "grid-cols-[420px_140px_140px_100px_100px]";
+  if (isComparisonMode) return "grid-cols-[420px_140px_140px_100px_100px_minmax(300px,1fr)]";
 
   switch (timePerspective) {
     case 'month':      return "grid-cols-[minmax(420px,3fr)_140px_140px_100px_100px]";
+    case 'bimestre':   return "grid-cols-[420px_repeat(6,minmax(200px,1fr))_140px]";
     case 'trimestre':  return "grid-cols-[420px_repeat(4,minmax(280px,1fr))_140px]";
     case 'semestre':   return "grid-cols-[420px_repeat(2,minmax(240px,1fr))_140px]";
     case 'year':       return "grid-cols-[420px_repeat(12,minmax(240px,1fr))_140px]";
@@ -163,7 +165,11 @@ const gridClass = useMemo(() => {
               key={idx} 
               className={cn(
                 "font-black text-white px-2 leading-tight flex flex-col justify-center h-full",
-                timePerspective !== 'month' && !isComparisonMode ? "text-center" : "text-right",
+                // Se não for comparação e não for mensal (ou seja, Trimestral/Semestral/Anual), centraliza
+                // OU se for a última coluna (Análise Sintética) no modo comparação, centraliza também
+                (timePerspective !== 'month' && !isComparisonMode) || (isComparisonMode && idx === labels.length - 1) 
+                  ? "text-center" 
+                  : "text-right",
                 timePerspective !== 'month' && !isComparisonMode && idx === labels.length - 1 && "text-rodovia-verde border-l border-white/20 pl-4" // Destaque no header do Total com borda
               )}
             >
@@ -238,6 +244,97 @@ const gridClass = useMemo(() => {
               )}>
                 {av !== undefined ? `${av.toFixed(1)}%` : "-"}
               </div>
+
+              {/* 5. Análise Descritiva (Comparativo) */}
+              {isComparisonMode && (
+                <div className="px-2 py-1 flex items-center justify-center h-full">
+                  {(() => {
+                    if (variation === undefined || variation === 0) return <span className="text-zinc-300 text-[10px]">-</span>;
+                    
+                    const isPositive = variation > 0;
+                    const absVar = Math.abs(variation);
+                    
+                    // Definição de Cores e Textos (Storytelling Executivo)
+                    let text = "";
+                    let colorMain = "";
+                    let bgClass = "";
+                    let strokeColor = "";
+                    
+                    if (absVar < 2) {
+                        text = "Estabilidade";
+                        colorMain = "text-zinc-500";
+                        strokeColor = "#71717a"; // zinc-500
+                    } else if (isPositive) {
+                        if (absVar > 20) { text = "Performance Excepcional"; colorMain = "text-emerald-700"; strokeColor = "#047857"; }
+                        else if (absVar > 10) { text = "Crescimento Sólido"; colorMain = "text-emerald-600"; strokeColor = "#059669"; }
+                        else { text = "Viés Positivo"; colorMain = "text-emerald-600"; strokeColor = "#10b981"; }
+                    } else {
+                        if (absVar > 20) { text = "Atenção Crítica"; colorMain = "text-red-700"; strokeColor = "#b91c1c"; }
+                        else if (absVar > 10) { text = "Desaceleração"; colorMain = "text-red-600"; strokeColor = "#dc2626"; }
+                        else { text = "Viés Negativo"; colorMain = "text-amber-600"; strokeColor = "#d97706"; }
+                    }
+
+                    // Mini Sparkline SVG
+                    const width = 40;
+                    const height = 20;
+                    const padding = 4;
+                    
+                    // Coordenadas Y (Invertidas pois SVG Y cresce para baixo)
+                    // Se positivo: começa baixo (Y grande), termina alto (Y pequeno)
+                    // Se negativo: começa alto (Y pequeno), termina baixo (Y grande)
+                    const yStart = isPositive ? height - padding : padding;
+                    const yEnd = isPositive ? padding : height - padding;
+                    
+                    // Se for estável
+                    const yFlat = height / 2;
+                    
+                    const y1 = absVar < 2 ? yFlat : yStart;
+                    const y2 = absVar < 2 ? yFlat : yEnd;
+
+                    return (
+                        <div className="flex items-center gap-3 px-2 py-1 w-full justify-center">
+                            {/* Área do Gráfico Sparkline */}
+                            <div className="relative w-[32px] h-[16px] shrink-0 opacity-80">
+                                <svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} className="overflow-visible">
+                                    {/* Defs para Gradiente */}
+                                    <defs>
+                                        <linearGradient id={`grad-${id}-${isPositive}`} x1="0%" y1="0%" x2="100%" y2="0%">
+                                            <stop offset="0%" stopColor={strokeColor} stopOpacity="0.3" />
+                                            <stop offset="100%" stopColor={strokeColor} stopOpacity="1" />
+                                        </linearGradient>
+                                    </defs>
+                                    
+                                    {/* Linha Guia (Pontilhada) */}
+                                    <line x1="0" y1={height/2} x2={width} y2={height/2} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 2" />
+
+                                    {/* Linha Principal */}
+                                    <path 
+                                        d={`M 0 ${y1} C ${width * 0.4} ${y1}, ${width * 0.6} ${y2}, ${width} ${y2}`}
+                                        fill="none" 
+                                        stroke={`url(#grad-${id}-${isPositive})`} 
+                                        strokeWidth="2" 
+                                        strokeLinecap="round"
+                                    />
+                                    
+                                    {/* Ponto Final */}
+                                    <circle cx={width} cy={y2} r="2" fill={strokeColor} />
+                                </svg>
+                            </div>
+
+                            {/* Conteúdo Textual */}
+                            <div className="flex flex-col leading-tight overflow-hidden text-left min-w-[110px]">
+                                <span className={cn("text-[10px] font-black uppercase tracking-wide truncate", colorMain)}>
+                                    {text}
+                                </span>
+                                <span className={cn("text-[9px] font-bold truncate mt-0.5", isPositive ? "text-emerald-600/70" : "text-red-600/70")}>
+                                    {absVar < 2 ? "Variação mínima" : `${isPositive ? '+' : ''}${variation.toFixed(1)}% vs. anterior`}
+                                </span>
+                            </div>
+                        </div>
+                    );
+                  })()}
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -632,6 +729,7 @@ const ComparisonPanel = ({
   const getPeriodOptions = () => {
     switch (timePerspective) {
       case 'month': return MONTH_LABELS_FULL.map((m, i) => ({ label: m, value: MONTH_LABELS[i] }));
+      case 'bimestre': return BIMESTRE_LABELS.map((b, i) => ({ label: b, value: i }));
       case 'trimestre': return TRIMESTRE_LABELS.map((t, i) => ({ label: t, value: i }));
       case 'semestre': return SEMESTRE_LABELS.map((s, i) => ({ label: s, value: i }));
       default: return [];
@@ -642,6 +740,7 @@ const ComparisonPanel = ({
 
   const perspectiveOptions = [
     { label: "Mensal", value: "month" },
+    { label: "Bimestral", value: "bimestre" },
     { label: "Trimestral", value: "trimestre" },
     { label: "Semestral", value: "semestre" },
     { label: "Anual", value: "year" },
@@ -726,7 +825,7 @@ const ComparisonPanel = ({
                     className="flex-1"
                   >
                     <ModernSelect 
-                      label={timePerspective === 'month' ? 'Mês' : timePerspective === 'trimestre' ? 'Trimestre' : 'Semestre'}
+                      label={timePerspective === 'month' ? 'Mês' : timePerspective === 'bimestre' ? 'Bimestre' : timePerspective === 'trimestre' ? 'Trimestre' : 'Semestre'}
                       value={p1.value}
                       onChange={(val) => setP1({ ...p1, value: val })}
                       options={options}
@@ -772,7 +871,7 @@ const ComparisonPanel = ({
                     className="flex-1"
                   >
                     <ModernSelect 
-                      label={timePerspective === 'month' ? 'Mês' : timePerspective === 'trimestre' ? 'Trimestre' : 'Semestre'}
+                      label={timePerspective === 'month' ? 'Mês' : timePerspective === 'bimestre' ? 'Bimestre' : timePerspective === 'trimestre' ? 'Trimestre' : 'Semestre'}
                       value={p2.value}
                       onChange={(val) => setP2({ ...p2, value: val })}
                       options={options}
@@ -848,7 +947,7 @@ export default function DREDashboard() {
       const dates = [getPDate(compP1), getPDate(compP2)].sort((a, b) => a.getTime() - b.getTime());
       
       // Expandimos para cobrir o ano todo se for visão agrupada
-      if (['trimestre', 'semestre', 'year'].includes(timePerspective)) {
+      if (['bimestre', 'trimestre', 'semestre', 'year'].includes(timePerspective)) {
         const startYear = Math.min(parseInt(String(compP1.year)), parseInt(String(compP2.year)));
         const endYear = Math.max(parseInt(String(compP1.year)), parseInt(String(compP2.year)));
         start = startOfYear(new Date(startYear, 0, 1));
@@ -861,13 +960,24 @@ export default function DREDashboard() {
       if (timePerspective === 'month') {
         start = startOfMonth(subMonths(date, 1));
       }
-      if (['trimestre', 'semestre'].includes(timePerspective)) {
-        start = startOfYear(date);
-        end = endOfYear(date);
-      }
       if (timePerspective === 'year') {
         // Pega desde Dezembro do ano anterior para cálculo de AH de Janeiro
         start = subMonths(startOfYear(date), 1);
+        end = endOfYear(date);
+      }
+      if (timePerspective === 'trimestre') {
+        // Pega desde Outubro do ano anterior (Q4) para cálculo de AH do Q1
+        start = subMonths(startOfYear(date), 3);
+        end = endOfYear(date);
+      }
+      if (timePerspective === 'bimestre') {
+        // Pega desde Novembro do ano anterior (B6) para cálculo de AH do B1
+        start = subMonths(startOfYear(date), 2);
+        end = endOfYear(date);
+      }
+      if (timePerspective === 'semestre') {
+        // Pega desde Julho do ano anterior (S2) para cálculo de AH do S1
+        start = subMonths(startOfYear(date), 6);
         end = endOfYear(date);
       }
       if (timePerspective === 'multi-year') {
@@ -886,17 +996,19 @@ export default function DREDashboard() {
     if (isComparisonMode) {
       const getPeriodLabel = (p: typeof compP1) => {
         if (timePerspective === 'month') return `${p.value}/${p.year.slice(-2)}`;
+        if (timePerspective === 'bimestre') return `${BIMESTRE_LABELS[p.value as number]} ${p.year}`;
         if (timePerspective === 'trimestre') return `${TRIMESTRE_LABELS[p.value as number]} ${p.year}`;
         if (timePerspective === 'semestre') return `${SEMESTRE_LABELS[p.value as number]} ${p.year}`;
         return `${p.year}`;
       };
-      return [getPeriodLabel(compP1), getPeriodLabel(compP2), 'AH %', 'AV %'];
+      return [getPeriodLabel(compP1), getPeriodLabel(compP2), 'AH %', 'AV %', 'ANÁLISE SINTÉTICA'];
     }
 
     switch (timePerspective) {
       case 'month': {
         return [`${monthLabel}/${year.slice(-2)}`, 'Anterior', 'AH %', 'AV %'];
       }
+      case 'bimestre': return [...BIMESTRE_LABELS, 'Total'];
       case 'trimestre': return ['1º Tri', '2º Tri', '3º Tri', '4º Tri', 'Total'];
       case 'semestre': return ['1º Semestre', '2º Semestre', 'Total'];
       case 'year': return [...MONTH_LABELS, 'Total'];
@@ -1008,6 +1120,7 @@ export default function DREDashboard() {
       numCols = 2;
     } else {
       if (timePerspective === 'month') numCols = 2;
+      if (timePerspective === 'bimestre') numCols = 7; // 6 bimestres + Total
       if (timePerspective === 'trimestre') numCols = 5; // 4 trimestres + total
       if (timePerspective === 'semestre') numCols = 3; // 2 semestres + total
       if (timePerspective === 'year') numCols = 13; // 12 meses + Total
@@ -1032,6 +1145,7 @@ export default function DREDashboard() {
         } else {
           // Bimestre, Trimestre, Semestre
           const getGroupIdx = (month: number) => {
+            if (timePerspective === 'bimestre') return Math.floor(month / 2);
             if (timePerspective === 'trimestre') return Math.floor(month / 3);
             if (timePerspective === 'semestre') return Math.floor(month / 6);
             return -1;
@@ -1058,26 +1172,50 @@ export default function DREDashboard() {
         return -1;
       }
       
-      // Lógica específica para Ano: Se for Dezembro do ano anterior, retorna código especial -99
+      // Lógica específica para Ano/Tri/Semestre: Se for período anterior, retorna código especial -99
       if (timePerspective === 'year') {
          if (y === targetY) return m; // 0..11
          if (y === targetY - 1 && m === 11) return -99; // Dezembro Anterior
          return -1;
       }
       
+      if (timePerspective === 'bimestre') {
+        if (y === targetY) return Math.floor(m / 2);
+        // B6 Anterior (Nov, Dez) = 10, 11
+        if (y === targetY - 1 && m >= 10) return -99;
+        return -1;
+      }
+      
+      if (timePerspective === 'trimestre') {
+        if (y === targetY) return Math.floor(m / 3);
+        // Q4 Anterior (Out, Nov, Dez) = 9, 10, 11
+        if (y === targetY - 1 && m >= 9) return -99;
+        return -1;
+      }
+
+      if (timePerspective === 'semestre') {
+        if (y === targetY) return Math.floor(m / 6);
+        // S2 Anterior (Jul..Dez) = 6..11
+        if (y === targetY - 1 && m >= 6) return -99;
+        return -1;
+      }
+      
       if (y !== targetY) return -1;
 
+      // Mantido apenas como fallback
       switch (timePerspective) {
-        case 'trimestre': return Math.floor(m / 3);
-        case 'semestre': return Math.floor(m / 6);
+        // case 'trimestre': return Math.floor(m / 3); // Tratado acima
+        // case 'semestre': return Math.floor(m / 6); // Tratado acima
         // case 'year': return m; // Já tratado acima
         default: return -1;
       }
     };
 
     const subcatValues = new Map<string, number[]>();
-    const previousDecemberValues = new Map<string, number>(); // Mapa para guardar Dezembro anterior
-
+    // Mapa para guardar valor do período anterior de referência (Dezembro para Anual, Q4 para Trimestral, S2 para Semestral)
+    // Mantivemos o nome 'previousDecemberValues' por compatibilidade, mas agora armazena o "Período Anterior" completo
+    const previousDecemberValues = new Map<string, number>(); 
+    
     movimentos.forEach(mov => {
       const config = configMap.get(mov.concod);
       const subcatId = config?.dre_subcategoria_id || 'nao_definido';
@@ -1094,7 +1232,7 @@ export default function DREDashboard() {
         subcatValues.get(subcatId)![colIdx] += valor;
         
         // Adiciona ao total anual se necessário (apenas valores do ano corrente, não do anterior)
-        if (!isComparisonMode && ['trimestre', 'semestre', 'year', 'multi-year'].includes(timePerspective)) {
+        if (!isComparisonMode && ['bimestre', 'trimestre', 'semestre', 'year', 'multi-year'].includes(timePerspective)) {
           const totalIdx = numCols - 1;
           subcatValues.get(subcatId)![totalIdx] += valor;
         }
@@ -1211,7 +1349,7 @@ export default function DREDashboard() {
       
       // AV baseada no primeiro valor ou total
       let avBaseIdx = 0;
-      const isMultiPeriod = !isComparisonMode && ['trimestre', 'semestre', 'year', 'multi-year'].includes(timePerspective);
+      const isMultiPeriod = !isComparisonMode && ['bimestre', 'trimestre', 'semestre', 'year', 'multi-year'].includes(timePerspective);
       if (isMultiPeriod) avBaseIdx = numCols - 1;
       const avBase = Math.abs(receitaBruta[avBaseIdx]) || 1;
 
@@ -1230,11 +1368,9 @@ export default function DREDashboard() {
          monthlyAH = row.values.map((val: number, idx: number) => {
              let prev = 0;
              if (idx === 0) {
-                 // Primeiro período: Tenta pegar do anterior (prevDecValue se for anual)
-                 // Para Bi/Tri/Semestre, se não tivermos histórico exato, fica 0 ou usamos lógica específica
-                 // Por enquanto, mantemos a lógica de 'year' que usa prevDecValue para Jan
-                 if (timePerspective === 'year') prev = row.prevDecValue || 0;
-                 else prev = 0; // Para Bi/Tri/Semestre inicial, sem histórico por enquanto
+                 // Primeiro período: Tenta pegar do anterior (prevDecValue se for anual/tri/sem)
+                 if (['year', 'bimestre', 'trimestre', 'semestre'].includes(timePerspective)) prev = row.prevDecValue || 0;
+                 else prev = 0;
              } else if (idx === row.values.length - 1) {
                  // Total: não calculamos AH mensal aqui
                  return 0; 
@@ -1262,7 +1398,8 @@ export default function DREDashboard() {
             subMonthlyAH = sub.values.map((val: number, idx: number) => {
                 let prev = 0;
                 if (idx === 0) {
-                    if (timePerspective === 'year') prev = sub.prevDecValue || 0;
+                    // Primeiro período: Tenta pegar do anterior
+                    if (['year', 'bimestre', 'trimestre', 'semestre'].includes(timePerspective)) prev = sub.prevDecValue || 0;
                     else prev = 0;
                 } else if (idx === sub.values.length - 1) {
                     return 0;
@@ -1385,6 +1522,7 @@ export default function DREDashboard() {
         let startMonth = 0;
         let monthsToAdd = 0;
         
+        if (timePerspective === 'bimestre') { startMonth = idx * 2; monthsToAdd = 2; label = `${BIMESTRE_LABELS[idx]} ${p.year}`; }
         if (timePerspective === 'trimestre') { startMonth = idx * 3; monthsToAdd = 3; label = `${TRIMESTRE_LABELS[idx]} ${p.year}`; }
         if (timePerspective === 'semestre') { startMonth = idx * 6; monthsToAdd = 6; label = `${SEMESTRE_LABELS[idx]} ${p.year}`; }
         
@@ -1428,6 +1566,7 @@ export default function DREDashboard() {
         // Bimestre, Trimestre, Semestre
         // Verifica se é coluna de Total
         let numCols = 0;
+        if (timePerspective === 'bimestre') numCols = 6;
         if (timePerspective === 'trimestre') numCols = 4;
         if (timePerspective === 'semestre') numCols = 2;
         
@@ -1441,6 +1580,7 @@ export default function DREDashboard() {
            let startMonth = 0;
            let monthsToAdd = 0;
            
+           if (timePerspective === 'bimestre') { startMonth = colIndex * 2; monthsToAdd = 2; label = BIMESTRE_LABELS[colIndex]; }
            if (timePerspective === 'trimestre') { startMonth = colIndex * 3; monthsToAdd = 3; label = TRIMESTRE_LABELS[colIndex]; }
            if (timePerspective === 'semestre') { startMonth = colIndex * 6; monthsToAdd = 6; label = SEMESTRE_LABELS[colIndex]; }
            
@@ -1495,6 +1635,7 @@ export default function DREDashboard() {
       if (timePerspective === 'year') {
         return `Ano de ${p.year}`;
       }
+      if (timePerspective === 'bimestre') return `${BIMESTRE_LABELS[p.value as number]} de ${p.year}`;
       if (timePerspective === 'trimestre') return `${TRIMESTRE_LABELS[p.value as number]} de ${p.year}`;
       if (timePerspective === 'semestre') return `${SEMESTRE_LABELS[p.value as number]} de ${p.year}`;
       return `${p.value}/${p.year}`;
@@ -1661,20 +1802,21 @@ export default function DREDashboard() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-4 relative z-10">
+        <div className="flex flex-col lg:flex-row items-end lg:items-center gap-3 relative z-10 w-full md:w-auto">
           {/* Segmented Control: Perspectiva */}
           {!isComparisonMode && (
-            <div className="flex items-center bg-zinc-100/80 p-1 rounded-[1.25rem] border border-black/5 backdrop-blur-md shadow-inner">
-              {(['month', 'trimestre', 'semestre', 'year', 'multi-year'] as TimePerspective[]).map((p) => {
+            <div className="flex items-center bg-zinc-100/80 p-1 rounded-[1.25rem] border border-black/5 backdrop-blur-md shadow-inner overflow-x-auto scrollbar-hide max-w-[calc(100vw-3rem)] lg:max-w-none">
+              {(['month', 'bimestre', 'trimestre', 'semestre', 'year', 'multi-year'] as TimePerspective[]).map((p) => {
                 const isActive = timePerspective === p;
                 
                 let label = '';
                 switch (p) {
-                  case 'month': label = 'Visão Mensal'; break;
-                  case 'trimestre': label = 'Visão Trimestral'; break;
-                  case 'semestre': label = 'Visão Semestral'; break;
-                  case 'year': label = 'Evolução Mensal'; break;
-                  case 'multi-year': label = 'Evolução Anual'; break;
+                  case 'month': label = 'Mensal'; break;
+                  case 'bimestre': label = 'Bimestral'; break;
+                  case 'trimestre': label = 'Trimestral'; break;
+                  case 'semestre': label = 'Semestral'; break;
+                  case 'year': label = 'Anual'; break;
+                  case 'multi-year': label = 'Histórico'; break;
                   default: label = p;
                 }
 
@@ -1688,7 +1830,7 @@ export default function DREDashboard() {
                       setTimePerspective(p);
                     }}
                     className={cn(
-                      "relative px-5 py-2.5 rounded-xl text-[10px] font-mono font-black uppercase transition-all duration-300 tracking-wider",
+                      "relative px-3 lg:px-4 py-2 rounded-xl text-[10px] font-mono font-black uppercase transition-all duration-300 tracking-wider whitespace-nowrap",
                       isActive
                         ? "text-white bg-rodovia-verde shadow-[0_4px_12px_-2px_rgba(16,185,129,0.4)] border border-emerald-400/20" 
                         : "text-zinc-500 hover:text-rodovia-azul hover:bg-black/5"
@@ -1710,14 +1852,14 @@ export default function DREDashboard() {
               setIsComparisonMode(!isComparisonMode);
             }}
             className={cn(
-              "flex items-center gap-2.5 px-5 py-2.5 rounded-2xl font-mono text-[10px] font-black uppercase tracking-widest transition-all duration-500",
+              "flex items-center gap-2 px-4 py-2 rounded-2xl font-mono text-[10px] font-black uppercase tracking-widest transition-all duration-500 whitespace-nowrap",
               isComparisonMode
                 ? "bg-rodovia-azul text-white shadow-[0_10px_25px_-5px_rgba(15,23,42,0.3)] ring-4 ring-rodovia-azul/10"
                 : "bg-white text-zinc-500 border border-black/5 hover:border-rodovia-verde/30 hover:bg-zinc-50 shadow-sm"
             )}
           >
-            <ArrowRightLeft className={cn("w-4 h-4 transition-transform duration-500", isComparisonMode && "rotate-180")} />
-            {isComparisonMode ? "Comparação Ativa" : "Comparar Períodos"}
+            <ArrowRightLeft className={cn("w-3.5 h-3.5 transition-transform duration-500", isComparisonMode && "rotate-180")} />
+            {isComparisonMode ? "Comparando" : "Comparar"}
           </button>
 
           <div className="h-8 w-px bg-zinc-200/60 mx-1 hidden lg:block" />
@@ -1779,7 +1921,12 @@ export default function DREDashboard() {
                   ? `Demonstrativo de ${MONTH_LABELS_FULL[MONTH_MAP[monthLabel]] || monthLabel} de ${year}`
                   : timePerspective === 'multi-year'
                     ? `Visão Histórica Consolidada (${YEARS[0]} - ${YEARS[YEARS.length - 1]})`
-                    : `Visão ${timePerspective === 'year' ? 'Evolutiva Mensal' : timePerspective === 'trimestre' ? 'Trimestral' : 'Semestral'} Consolidada de ${year}`
+                    : `Visão ${
+                        timePerspective === 'year' ? 'Evolutiva Mensal' 
+                        : timePerspective === 'bimestre' ? 'Bimestral'
+                        : timePerspective === 'trimestre' ? 'Trimestral' 
+                        : 'Semestral'
+                      } Consolidada de ${year}`
               }
             </p>
           </div>
@@ -1804,13 +1951,14 @@ export default function DREDashboard() {
         ) : (
           <div className={cn(
             "w-full overflow-auto max-h-[850px] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-200/50 hover:scrollbar-thumb-zinc-300",
-            (timePerspective === 'year' || timePerspective === 'multi-year' || timePerspective === 'trimestre') && !isComparisonMode && "max-w-[calc(100vw-2.5rem)]"
+            (timePerspective === 'year' || timePerspective === 'multi-year' || timePerspective === 'bimestre' || timePerspective === 'trimestre') && !isComparisonMode && "max-w-[calc(100vw-2.5rem)]"
           )}>
             <div className={cn(
               "pb-4",
-              timePerspective === 'trimestre' && "min-w-[1700px]",
-              timePerspective === 'semestre' && "min-w-[1040px]",
-              timePerspective === 'multi-year' && "min-w-[2600px]",
+              timePerspective === 'bimestre' && !isComparisonMode && "min-w-[2000px]",
+              timePerspective === 'trimestre' && !isComparisonMode && "min-w-[1700px]",
+              timePerspective === 'semestre' && !isComparisonMode && "min-w-[1040px]",
+              timePerspective === 'multi-year' && !isComparisonMode && "min-w-[2600px]",
               timePerspective === 'year' && !isComparisonMode && "min-w-[3920px]"
             )}>
               <DRERow 
