@@ -67,7 +67,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const menuItems = [
     { label: "GERAL", href: "/" },
     { label: "DRE GERENCIAL", href: "/dre" },
-    { label: "FLUXO DE CAIXA", href: "/cash-flow" },
+    { label: "FLUXO DE CAIXA", href: "/dfc" },
   ];
 
   return (

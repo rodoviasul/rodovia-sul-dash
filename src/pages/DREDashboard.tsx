@@ -40,8 +40,6 @@ const BIMESTRE_LABELS = ["1º Bim", "2º Bim", "3º Bim", "4º Bim", "5º Bim", 
 const SEMESTRE_LABELS = ["1º Semestre", "2º Semestre"];
 const YEARS = ["2020", "2021", "2022", "2023", "2024", "2025", "2026"];
 
-type TimePerspective = 'month' | 'bimestre' | 'trimestre' | 'semestre' | 'year' | 'multi-year';
-
 import { DREDetailModal } from "@/components/dashboard/DREDetailModal";
 import { DRERow, TimePerspective } from "@/components/dashboard/DRERow";
 

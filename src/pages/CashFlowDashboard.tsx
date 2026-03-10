@@ -270,8 +270,9 @@ export default function CashFlowDashboard() {
         
         ['entradasOp', 'saidasOp', 'entradasInv', 'saidasInv', 'entradasFin', 'saidasFin'].forEach(key => {
              const k = key as keyof typeof rows;
-             if (rows[k].banks) {
-                 const arr = rows[k].banks.get(id)!;
+             const row = rows[k] as { total: number[], banks?: Map<number, number[]> };
+             if (row.banks) {
+                 const arr = row.banks.get(id)!;
                  arr[totalIdx] = arr.slice(0, totalIdx).reduce((a, b) => a + b, 0);
              }
         });

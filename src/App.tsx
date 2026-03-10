@@ -68,7 +68,7 @@ export default function App() {
             <Route element={<DashboardWrapper />}>
               <Route path="/" element={<MasterDashboard />} />
               <Route path="/dre" element={<DREDashboard />} />
-              <Route path="/cash-flow" element={<CashFlowDashboard />} />
+              <Route path="/dfc" element={<CashFlowDashboard />} />
             </Route>
 
             {/* Rotas de Configuração (Layout Exclusivo) */}
