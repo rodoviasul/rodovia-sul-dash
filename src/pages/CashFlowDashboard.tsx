@@ -82,6 +82,7 @@ const DashboardLoadingScreen = () => {
 export default function CashFlowDashboard() {
   const { period: year, month: monthLabel } = useFilter();
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
+  const [auditMonthFilter, setAuditMonthFilter] = useState<string>('all');
   const [viewMode, setViewMode] = useState<'monthly' | 'historical'>('monthly');
 
   const dateRange = useMemo(() => {
@@ -137,37 +138,56 @@ export default function CashFlowDashboard() {
     const numCols = periods.length + 1; // +1 for Total
     const initArray = () => new Array(numCols).fill(0);
 
-    const rows = {
-      saldoInicial: { total: initArray(), banks: new Map<number, number[]>() },
-      entradasOp: { total: initArray(), banks: new Map<number, number[]>() },
-      saidasOp: { total: initArray(), banks: new Map<number, number[]>() },
-      fluxoOp: { total: initArray() },
-      entradasInv: { total: initArray(), banks: new Map<number, number[]>() },
-      saidasInv: { total: initArray(), banks: new Map<number, number[]>() },
-      fluxoInv: { total: initArray() },
-      entradasFin: { total: initArray(), banks: new Map<number, number[]>() },
-      saidasFin: { total: initArray(), banks: new Map<number, number[]>() },
-      fluxoFin: { total: initArray() },
-      geracaoCaixa: { total: initArray() },
-      saldoFinal: { total: initArray(), banks: new Map<number, number[]>() }
+    const rows: { [key: string]: { total: number[], items: Map<any, number[]> } } = {
+      saldoInicial: { total: initArray(), items: new Map<number, number[]>() },
+      entradasOp: { total: initArray(), items: new Map<string, number[]>() },
+      saidasOp: { total: initArray(), items: new Map<string, number[]>() },
+      fluxoOp: { total: initArray(), items: new Map() },
+      entradasInv: { total: initArray(), items: new Map<string, number[]>() },
+      saidasInv: { total: initArray(), items: new Map<string, number[]>() },
+      fluxoInv: { total: initArray(), items: new Map() },
+      entradasFin: { total: initArray(), items: new Map<string, number[]>() },
+      saidasFin: { total: initArray(), items: new Map<string, number[]>() },
+      fluxoFin: { total: initArray(), items: new Map() },
+      entradasNC: { total: initArray(), items: new Map<string, number[]>() },
+      saidasNC: { total: initArray(), items: new Map<string, number[]>() },
+      fluxoNC: { total: initArray(), items: new Map() },
+      entradasTransf: { total: initArray(), items: new Map<string, number[]>() },
+      saidasTransf: { total: initArray(), items: new Map<string, number[]>() },
+      fluxoTransf: { total: initArray(), items: new Map() },
+      entradasDiff: { total: initArray(), items: new Map<string, number[]>() },
+      saidasDiff: { total: initArray(), items: new Map<string, number[]>() },
+      fluxoDiff: { total: initArray(), items: new Map() },
+      geracaoCaixa: { total: initArray(), items: new Map() },
+      saldoFinal: { total: initArray(), items: new Map<number, number[]>() },
+      entradasTransfAudit: { total: initArray(), items: new Map<string, number[]>() },
+      saidasTransfAudit: { total: initArray(), items: new Map<string, number[]>() }
     };
 
-    // Bank Names Map
+    // Names Maps
     const bankNames = new Map<number, string>();
     initialBalances.forEach(b => bankNames.set(b.banco_id, b.banco_nome));
     flows.forEach(f => bankNames.set(f.banco_id, f.banco_nome));
 
-    // Initialize Bank Arrays
+    const accountNames = new Map<string, string>();
+    const diffDetails = new Map<string, { movlanc?: number, movdata?: string, movobs?: string }>();
+    const accountContips = new Map<string, string>();
+    flows.forEach(f => {
+      if (f.tipo_fluxo === 'DIFERENÇA' && f.movlanc) {
+        const key = `DIF-${f.movlanc}`;
+        diffDetails.set(key, { movlanc: f.movlanc, movdata: f.movdata, movobs: f.movobs });
+      }
+      if (f.concod) {
+         accountNames.set(f.concod, f.condescr || 'Sem Descrição');
+         accountContips.set(f.concod, f.contip || '');
+      }
+    });
+
+    // Initialize Items Arrays for Balances
     const allBankIds = Array.from(bankNames.keys());
     allBankIds.forEach(id => {
-      rows.saldoInicial.banks.set(id, initArray());
-      rows.saldoFinal.banks.set(id, initArray());
-      rows.entradasOp.banks.set(id, initArray());
-      rows.saidasOp.banks.set(id, initArray());
-      rows.entradasInv.banks.set(id, initArray());
-      rows.saidasInv.banks.set(id, initArray());
-      rows.entradasFin.banks.set(id, initArray());
-      rows.saidasFin.banks.set(id, initArray());
+      rows.saldoInicial.items.set(id, initArray());
+      rows.saldoFinal.items.set(id, initArray());
     });
 
     // Processing Loop
@@ -180,13 +200,11 @@ export default function CashFlowDashboard() {
       // 1. Set Start Balances for this period
       rows.saldoInicial.total[colIdx] = currentGlobalBalance;
       allBankIds.forEach(id => {
-        rows.saldoInicial.banks.get(id)![colIdx] = bankBalances.get(id) || 0;
+        rows.saldoInicial.items.get(id)![colIdx] = bankBalances.get(id) || 0;
       });
 
       // 2. Process Flows
       // Filter flows that belong to this period
-      // If monthly: flow.periodo === periodKey (YYYY-MM)
-      // If historical: flow.periodo.startsWith(periodKey) (YYYY)
       const periodFlows = flows.filter(f => 
           viewMode === 'monthly' ? f.periodo === periodKey : f.periodo.startsWith(periodKey)
       );
@@ -197,32 +215,89 @@ export default function CashFlowDashboard() {
       let pSaidasInv = 0;
       let pEntradasFin = 0;
       let pSaidasFin = 0;
+      let pEntradasNC = 0;
+      let pSaidasNC = 0;
+      let pEntradasTransf = 0;
+      let pSaidasTransf = 0;
+      let pEntradasTransfAudit = 0;
+      let pSaidasTransfAudit = 0;
+      let pEntradasDiff = 0;
+      let pSaidasDiff = 0;
 
       periodFlows.forEach(flow => {
         const type = flow.tipo_fluxo.toLowerCase();
         const bankId = flow.banco_id;
+        const isDiff = type.includes('diferença');
+        const accountKey = isDiff ? (flow.movlanc ? `DIF-${flow.movlanc}` : (flow.concod || 'DIF')) : (flow.concod || '0-NC');
         
+        if (flow.concod && !accountNames.has(accountKey)) {
+          accountNames.set(accountKey, flow.condescr || 'Sem Descrição');
+        }
+        
+        const updateRow = (row: { items: Map<any, number[]> }, val: number) => {
+          if (!row.items.has(accountKey)) row.items.set(accountKey, initArray());
+          row.items.get(accountKey)![colIdx] += val;
+        };
+
+        const isGerencial = flow.banlistager === 'S';
+
         if (type.includes('operacional')) {
-          rows.entradasOp.banks.get(bankId)![colIdx] += flow.entradas;
-          rows.saidasOp.banks.get(bankId)![colIdx] += flow.saidas;
+          updateRow(rows.entradasOp, flow.entradas);
           pEntradasOp += flow.entradas;
-          pSaidasOp += flow.saidas;
+          if (isGerencial) {
+            updateRow(rows.saidasOp, flow.saidas);
+            pSaidasOp += flow.saidas;
+          }
         } else if (type.includes('investimento')) {
-          rows.entradasInv.banks.get(bankId)![colIdx] += flow.entradas;
-          rows.saidasInv.banks.get(bankId)![colIdx] += flow.saidas;
+          updateRow(rows.entradasInv, flow.entradas);
           pEntradasInv += flow.entradas;
-          pSaidasInv += flow.saidas;
+          if (isGerencial) {
+            updateRow(rows.saidasInv, flow.saidas);
+            pSaidasInv += flow.saidas;
+          }
         } else if (type.includes('financiamento')) {
-          rows.entradasFin.banks.get(bankId)![colIdx] += flow.entradas;
-          rows.saidasFin.banks.get(bankId)![colIdx] += flow.saidas;
+          updateRow(rows.entradasFin, flow.entradas);
           pEntradasFin += flow.entradas;
-          pSaidasFin += flow.saidas;
+          if (isGerencial) {
+            updateRow(rows.saidasFin, flow.saidas);
+            pSaidasFin += flow.saidas;
+          }
+        } else if (type.includes('transferência')) {
+          // Audit takes everything
+          updateRow(rows.entradasTransfAudit, flow.entradas);
+          updateRow(rows.saidasTransfAudit, flow.saidas);
+          pEntradasTransfAudit += flow.entradas;
+          pSaidasTransfAudit += flow.saidas;
+          
+          // DFC only takes gerencial
+          if (isGerencial) {
+            updateRow(rows.entradasTransf, flow.entradas);
+            updateRow(rows.saidasTransf, flow.saidas);
+            pEntradasTransf += flow.entradas;
+            pSaidasTransf += flow.saidas;
+          }
+        } else if (type.includes('não classificado')) {
+          updateRow(rows.entradasNC, flow.entradas);
+          pEntradasNC += flow.entradas;
+          if (isGerencial) {
+            updateRow(rows.saidasNC, flow.saidas);
+            pSaidasNC += flow.saidas;
+          }
+        } else if (type.includes('diferença')) {
+          updateRow(rows.entradasDiff, flow.entradas);
+          pEntradasDiff += flow.entradas;
+          if (isGerencial) {
+            updateRow(rows.saidasDiff, flow.saidas);
+            pSaidasDiff += flow.saidas;
+          }
         }
 
-        // Update Bank Balance
-        const net = flow.liquido; 
-        const currentBankBal = bankBalances.get(bankId) || 0;
-        bankBalances.set(bankId, currentBankBal + net);
+        // Update Bank Balance (Only for banks present in saldoInicial/bankBalances)
+        if (isGerencial) {
+          const net = flow.liquido; 
+          const currentBankBal = bankBalances.get(bankId) || 0;
+          bankBalances.set(bankId, currentBankBal + net);
+        }
       });
 
       // Update Totals
@@ -238,14 +313,33 @@ export default function CashFlowDashboard() {
       rows.saidasFin.total[colIdx] = pSaidasFin;
       rows.fluxoFin.total[colIdx] = pEntradasFin - pSaidasFin;
 
-      const geracao = (pEntradasOp - pSaidasOp) + (pEntradasInv - pSaidasInv) + (pEntradasFin - pSaidasFin);
+      rows.entradasNC.total[colIdx] = pEntradasNC;
+      rows.saidasNC.total[colIdx] = pSaidasNC;
+      rows.fluxoNC.total[colIdx] = pEntradasNC - pSaidasNC;
+
+      rows.entradasNC.total[colIdx] = pEntradasNC;
+      rows.saidasNC.total[colIdx] = pSaidasNC;
+      rows.fluxoNC.total[colIdx] = pEntradasNC - pSaidasNC;
+
+      rows.entradasTransf.total[colIdx] = pEntradasTransf;
+      rows.saidasTransf.total[colIdx] = pSaidasTransf;
+      rows.fluxoTransf.total[colIdx] = pEntradasTransf - pSaidasTransf;
+
+      rows.entradasTransfAudit.total[colIdx] = pEntradasTransfAudit;
+      rows.saidasTransfAudit.total[colIdx] = pSaidasTransfAudit;
+
+      rows.entradasDiff.total[colIdx] = pEntradasDiff;
+      rows.saidasDiff.total[colIdx] = pSaidasDiff;
+      rows.fluxoDiff.total[colIdx] = pEntradasDiff - pSaidasDiff;
+
+      const geracao = (pEntradasOp - pSaidasOp) + (pEntradasInv - pSaidasInv) + (pEntradasFin - pSaidasFin) + (pEntradasNC - pSaidasNC) + (pEntradasTransf - pSaidasTransf) + (pEntradasDiff - pSaidasDiff);
       rows.geracaoCaixa.total[colIdx] = geracao;
 
       currentGlobalBalance += geracao;
       rows.saldoFinal.total[colIdx] = currentGlobalBalance;
 
       allBankIds.forEach(id => {
-        rows.saldoFinal.banks.get(id)![colIdx] = bankBalances.get(id) || 0;
+        rows.saldoFinal.items.get(id)![colIdx] = bankBalances.get(id) || 0;
       });
     });
 
@@ -256,38 +350,31 @@ export default function CashFlowDashboard() {
     rows.saldoInicial.total[totalIdx] = rows.saldoInicial.total[0];
     rows.saldoFinal.total[totalIdx] = rows.saldoFinal.total[totalIdx - 1];
     
-    ['entradasOp', 'saidasOp', 'fluxoOp', 'entradasInv', 'saidasInv', 'fluxoInv', 'entradasFin', 'saidasFin', 'fluxoFin', 'geracaoCaixa'].forEach(key => {
+    ['entradasOp', 'saidasOp', 'fluxoOp', 'entradasInv', 'saidasInv', 'fluxoInv', 'entradasFin', 'saidasFin', 'fluxoFin', 'entradasNC', 'saidasNC', 'fluxoNC', 'entradasTransf', 'saidasTransf', 'fluxoTransf', 'entradasTransfAudit', 'saidasTransfAudit', 'entradasDiff', 'saidasDiff', 'fluxoDiff', 'geracaoCaixa'].forEach(key => {
         const k = key as keyof typeof rows;
         if (rows[k].total) {
             rows[k].total[totalIdx] = rows[k].total.slice(0, totalIdx).reduce((a, b) => a + b, 0);
         }
     });
 
-    // Handle Bank totals
+    // Handle Bank totals (Saldo Inicial/Final)
     allBankIds.forEach(id => {
-        rows.saldoInicial.banks.get(id)![totalIdx] = rows.saldoInicial.banks.get(id)![0];
-        rows.saldoFinal.banks.get(id)![totalIdx] = rows.saldoFinal.banks.get(id)![totalIdx - 1];
-        
-        ['entradasOp', 'saidasOp', 'entradasInv', 'saidasInv', 'entradasFin', 'saidasFin'].forEach(key => {
-             const k = key as keyof typeof rows;
-             const row = rows[k] as { total: number[], banks?: Map<number, number[]> };
-             if (row.banks) {
-                 const arr = row.banks.get(id)!;
-                 arr[totalIdx] = arr.slice(0, totalIdx).reduce((a, b) => a + b, 0);
-             }
-        });
+        rows.saldoInicial.items.get(id)![totalIdx] = rows.saldoInicial.items.get(id)![0];
+        rows.saldoFinal.items.get(id)![totalIdx] = rows.saldoFinal.items.get(id)![totalIdx - 1];
     });
 
-    // Prepare KPIs Data (different logic for Historical?)
-    // For now, let's keep KPIs showing the selected Month if in Monthly mode.
-    // If Historical mode, maybe show Current Year vs Previous Year?
-    // User didn't specify KPI changes, just visualization.
-    // Let's adapt KPIs:
-    // Monthly: Selected Month vs Previous Month.
-    // Historical: Total of Current Year vs Total of Previous Year? Or just hide KPIs/keep them simple?
-    // Let's keep the logic simple: KPIs reflect the "Current Reference".
-    // If Historical, let's show the Last Year in the range vs Year before.
-    
+    // Handle Account totals (Flows)
+    ['entradasOp', 'saidasOp', 'entradasInv', 'saidasInv', 'entradasFin', 'saidasFin', 'entradasNC', 'saidasNC', 'entradasTransf', 'saidasTransf', 'entradasTransfAudit', 'saidasTransfAudit', 'entradasDiff', 'saidasDiff'].forEach(key => {
+         const k = key as keyof typeof rows;
+         const row = rows[k] as { total: number[], items: Map<string, number[]> };
+         if (!row) return;
+         Array.from(row.items.keys()).forEach(accountKey => {
+             const arr = row.items.get(accountKey)!;
+             arr[totalIdx] = arr.slice(0, totalIdx).reduce((a, b) => a + b, 0);
+         });
+    });
+
+    // Prepare KPIs Data
     let currentKpiIdx = -1;
     let prevKpiIdx = -1;
 
@@ -295,8 +382,7 @@ export default function CashFlowDashboard() {
         currentKpiIdx = MONTH_MAP[monthLabel];
         prevKpiIdx = currentKpiIdx > 0 ? currentKpiIdx - 1 : -1;
     } else {
-        // Historical: Last year vs Penultimate year
-        currentKpiIdx = periods.length - 1; // Last column (Current Year)
+        currentKpiIdx = periods.length - 1;
         prevKpiIdx = periods.length > 1 ? periods.length - 2 : -1;
     }
 
@@ -340,17 +426,40 @@ export default function CashFlowDashboard() {
     };
 
     // Prepare Table Data structure for DRERow
-    const createBankRows = (bankMap: Map<number, number[]>, parentId: string) => {
-      return Array.from(bankMap.entries())
-        .filter(([_, vals]) => vals.some(v => v !== 0)) // Only show banks with values
-        .map(([id, vals]) => ({
-          id: `${parentId}-bank-${id}`,
-          name: bankNames.get(id) || `Banco ${id}`,
-          values: vals,
-          monthlyAH: calculateAH(vals),
-          level: 2,
-          tipo: 'CONTA'
-        }));
+    const createDetailRows = (itemMap: Map<any, number[]>, parentId: string, isBankLine: boolean = false) => {
+      return Array.from(itemMap.entries())
+        .filter(([_, vals]) => vals.some(v => v !== 0))
+        .map(([key, vals]) => {
+          let name = '';
+          if (isBankLine) {
+            name = bankNames.get(key) || `Banco ${key}`;
+          } else {
+            const accountCode = key as string;
+            if (accountCode.startsWith('DIF')) {
+              const details = diffDetails.get(accountCode);
+              if (details) {
+                const dateStr = details.movdata ? format(new Date(details.movdata), 'dd/MM/yyyy') : '';
+                name = `${details.movlanc || ''} - ${dateStr} - ${details.movobs || ''}`;
+              } else {
+                name = 'DIFERENÇA ENTRE CAIXA E TÍTULO';
+              }
+            } else if (accountCode === '0-NC') {
+              name = 'LANÇAMENTO SEM CONTA (NÃO CLASSIFICADO)';
+            } else {
+              const desc = accountNames.get(accountCode) || 'Sem Descrição';
+              name = `${accountCode} - ${desc}`;
+            }
+          }
+
+          return {
+            id: `${parentId}-detail-${key}`,
+            name: name,
+            values: vals,
+            monthlyAH: calculateAH(vals),
+            level: 2,
+            tipo: 'CONTA'
+          };
+        });
     };
 
     const tableData = [
@@ -359,7 +468,7 @@ export default function CashFlowDashboard() {
         name: 'SALDO INICIAL',
         values: rows.saldoInicial.total,
         monthlyAH: calculateAH(rows.saldoInicial.total),
-        subcategories: createBankRows(rows.saldoInicial.banks, 'saldo-inicial'),
+        subcategories: createDetailRows(rows.saldoInicial.items, 'saldo-inicial', true),
         level: 1,
         tipo: 'CONTA'
       },
@@ -371,24 +480,24 @@ export default function CashFlowDashboard() {
         level: 1,
         tipo: 'SUBTOTAL',
         subcategories: [
-            {
-                id: 'entradas-op',
-                name: '(+) Entradas Operacionais',
-                values: rows.entradasOp.total,
-                monthlyAH: calculateAH(rows.entradasOp.total),
-                subcategories: createBankRows(rows.entradasOp.banks, 'entradas-op'),
-                level: 2,
-                tipo: 'CONTA'
-            },
-            {
-                id: 'saidas-op',
-                name: '(-) Saídas Operacionais',
-                values: rows.saidasOp.total.map(v => -v),
-                monthlyAH: calculateAH(rows.saidasOp.total.map(v => -v)),
-                subcategories: createBankRows(rows.saidasOp.banks, 'saidas-op').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
-                level: 2,
-                tipo: 'CONTA'
-            }
+          {
+            id: 'entradas-op',
+            name: '(+) Entradas Operacionais',
+            values: rows.entradasOp.total,
+            monthlyAH: calculateAH(rows.entradasOp.total),
+            subcategories: createDetailRows(rows.entradasOp.items, 'entradas-op'),
+            level: 2,
+            tipo: 'CONTA'
+          },
+          {
+            id: 'saidas-op',
+            name: '(-) Saídas Operacionais',
+            values: rows.saidasOp.total.map(v => -v),
+            monthlyAH: calculateAH(rows.saidasOp.total.map(v => -v)),
+            subcategories: createDetailRows(rows.saidasOp.items, 'saidas-op').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+            level: 2,
+            tipo: 'CONTA'
+          }
         ]
       },
       {
@@ -399,24 +508,24 @@ export default function CashFlowDashboard() {
         level: 1,
         tipo: 'SUBTOTAL',
         subcategories: [
-            {
-                id: 'entradas-inv',
-                name: '(+) Entradas de Investimento',
-                values: rows.entradasInv.total,
-                monthlyAH: calculateAH(rows.entradasInv.total),
-                subcategories: createBankRows(rows.entradasInv.banks, 'entradas-inv'),
-                level: 2,
-                tipo: 'CONTA'
-            },
-            {
-                id: 'saidas-inv',
-                name: '(-) Saídas de Investimento',
-                values: rows.saidasInv.total.map(v => -v),
-                monthlyAH: calculateAH(rows.saidasInv.total.map(v => -v)),
-                subcategories: createBankRows(rows.saidasInv.banks, 'saidas-inv').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
-                level: 2,
-                tipo: 'CONTA'
-            }
+          {
+            id: 'entradas-inv',
+            name: '(+) Entradas de Investimento',
+            values: rows.entradasInv.total,
+            monthlyAH: calculateAH(rows.entradasInv.total),
+            subcategories: createDetailRows(rows.entradasInv.items, 'entradas-inv'),
+            level: 2,
+            tipo: 'CONTA'
+          },
+          {
+            id: 'saidas-inv',
+            name: '(-) Saídas de Investimento',
+            values: rows.saidasInv.total.map(v => -v),
+            monthlyAH: calculateAH(rows.saidasInv.total.map(v => -v)),
+            subcategories: createDetailRows(rows.saidasInv.items, 'saidas-inv').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+            level: 2,
+            tipo: 'CONTA'
+          }
         ]
       },
       {
@@ -427,24 +536,24 @@ export default function CashFlowDashboard() {
         level: 1,
         tipo: 'SUBTOTAL',
         subcategories: [
-            {
-                id: 'entradas-fin',
-                name: '(+) Entradas de Financiamento',
-                values: rows.entradasFin.total,
-                monthlyAH: calculateAH(rows.entradasFin.total),
-                subcategories: createBankRows(rows.entradasFin.banks, 'entradas-fin'),
-                level: 2,
-                tipo: 'CONTA'
-            },
-            {
-                id: 'saidas-fin',
-                name: '(-) Saídas de Financiamento',
-                values: rows.saidasFin.total.map(v => -v),
-                monthlyAH: calculateAH(rows.saidasFin.total.map(v => -v)),
-                subcategories: createBankRows(rows.saidasFin.banks, 'saidas-fin').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
-                level: 2,
-                tipo: 'CONTA'
-            }
+          {
+            id: 'entradas-fin',
+            name: '(+) Entradas de Financiamento',
+            values: rows.entradasFin.total,
+            monthlyAH: calculateAH(rows.entradasFin.total),
+            subcategories: createDetailRows(rows.entradasFin.items, 'entradas-fin'),
+            level: 2,
+            tipo: 'CONTA'
+          },
+          {
+            id: 'saidas-fin',
+            name: '(-) Saídas de Financiamento',
+            values: rows.saidasFin.total.map(v => -v),
+            monthlyAH: calculateAH(rows.saidasFin.total.map(v => -v)),
+            subcategories: createDetailRows(rows.saidasFin.items, 'saidas-fin').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+            level: 2,
+            tipo: 'CONTA'
+          }
         ]
       },
       {
@@ -456,18 +565,244 @@ export default function CashFlowDashboard() {
         tipo: 'SUBTOTAL'
       },
       {
+        id: 'grp-transferencia',
+        name: '(+/-) TRANSFERÊNCIAS',
+        values: rows.fluxoTransf.total,
+        monthlyAH: calculateAH(rows.fluxoTransf.total),
+        level: 1,
+        tipo: 'SUBTOTAL',
+        subcategories: [
+            {
+                id: 'entradas-transf',
+                name: '(+) Entradas de Transferência',
+                values: rows.entradasTransf.total,
+                monthlyAH: calculateAH(rows.entradasTransf.total),
+                subcategories: createDetailRows(rows.entradasTransf.items, 'entradas-transf'),
+                level: 2,
+                tipo: 'CONTA'
+            },
+            {
+                id: 'saidas-transf',
+                name: '(-) Saídas de Transferência',
+                values: rows.saidasTransf.total.map(v => -v),
+                monthlyAH: calculateAH(rows.saidasTransf.total.map(v => -v)),
+                subcategories: createDetailRows(rows.saidasTransf.items, 'saidas-transf').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+                level: 2,
+                tipo: 'CONTA'
+            }
+        ]
+      },
+      {
+        id: 'grp-nao-classificado',
+        name: '(+/-) NÃO CLASSIFICADOS',
+        values: rows.fluxoNC.total,
+        monthlyAH: calculateAH(rows.fluxoNC.total),
+        level: 1,
+        tipo: 'SUBTOTAL',
+        subcategories: [
+            {
+                id: 'entradas-nc',
+                name: '(+) Entradas Não Classificadas',
+                values: rows.entradasNC.total,
+                monthlyAH: calculateAH(rows.entradasNC.total),
+                subcategories: createDetailRows(rows.entradasNC.items, 'entradas-nc'),
+                level: 2,
+                tipo: 'CONTA'
+            },
+            {
+                id: 'saidas-nc',
+                name: '(-) Saídas Não Classificadas',
+                values: rows.saidasNC.total.map(v => -v),
+                monthlyAH: calculateAH(rows.saidasNC.total.map(v => -v)),
+                subcategories: createDetailRows(rows.saidasNC.items, 'saidas-nc').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+                level: 2,
+                tipo: 'CONTA'
+            }
+        ]
+      },
+      {
         id: 'saldo-final',
         name: 'SALDO FINAL',
         values: rows.saldoFinal.total,
         monthlyAH: calculateAH(rows.saldoFinal.total),
-        subcategories: createBankRows(rows.saldoFinal.banks, 'saldo-final'),
+        subcategories: createDetailRows(rows.saldoFinal.items, 'saldo-final', true),
         level: 1,
         tipo: 'CONTA'
       }
     ];
 
-    return { kpis, tableData, columns };
+    // Prepare Audit Table Data
+    const splitByContip = (maps: Map<string, number[]>[], targetContip: string) => {
+      const resultItems = new Map<string, number[]>();
+      const resultTotal = initArray();
+      
+      maps.forEach(m => {
+        m.forEach((vals, acc) => {
+          if (accountContips.get(acc) === targetContip) {
+            if (!resultItems.has(acc)) resultItems.set(acc, initArray());
+            const targetArr = resultItems.get(acc)!;
+            vals.forEach((v, i) => {
+              targetArr[i] += v;
+              resultTotal[i] += v;
+            });
+          }
+        });
+      });
+      return { total: resultTotal, items: resultItems };
+    };
+
+    const entranceMaps = [rows.entradasOp.items, rows.entradasInv.items, rows.entradasFin.items];
+    const auditTrad = splitByContip(entranceMaps, 'R');
+    const auditExtras = splitByContip(entranceMaps, 'E');
+    
+    const auditEntradasDiffSub = createDetailRows(rows.entradasDiff.items, 'audit-entradas-diff');
+    
+    const auditEntradasDiffTotal = initArray();
+    auditEntradasDiffSub.forEach(sub => {
+      sub.values.forEach((v, i) => auditEntradasDiffTotal[i] += v);
+    });
+
+    const auditEntradasSub = [
+      {
+        id: 'audit-entradas-trad-r',
+        name: '(+) Entradas Tradicionais (contip = R)',
+        values: auditTrad.total,
+        monthlyAH: calculateAH(auditTrad.total),
+        level: 2,
+        tipo: 'CONTA',
+        subcategories: createDetailRows(auditTrad.items, 'audit-entradas-trad-r'),
+      },
+      {
+        id: 'audit-entradas-extras-e',
+        name: '(+) Entradas Extras (contip = E)',
+        values: auditExtras.total,
+        monthlyAH: calculateAH(auditExtras.total),
+        level: 2,
+        tipo: 'CONTA',
+        subcategories: createDetailRows(auditExtras.items, 'audit-entradas-extras-e'),
+      },
+      {
+        id: 'audit-entradas-transf',
+        name: '(+) Entradas de Transferência',
+        values: rows.entradasTransfAudit.total,
+        monthlyAH: calculateAH(rows.entradasTransfAudit.total),
+        subcategories: createDetailRows(rows.entradasTransfAudit.items, 'audit-entradas-transf'),
+        level: 2,
+        tipo: 'CONTA'
+      },
+      {
+        id: 'audit-entradas-diff',
+        name: '(+) Diferenças (Entradas)',
+        values: auditEntradasDiffTotal,
+        monthlyAH: calculateAH(auditEntradasDiffTotal),
+        subcategories: auditEntradasDiffSub,
+        level: 2,
+        tipo: 'CONTA'
+      }
+    ];
+
+    const totalEntradasVal = initArray();
+    auditEntradasSub.forEach(s => s.values.forEach((v, i) => totalEntradasVal[i] += v));
+
+    // Audit Saidas logic (using same "sum of children" logic)
+    const exitMaps = [rows.saidasOp.items, rows.saidasInv.items, rows.saidasFin.items];
+    const auditSaidasTradItems = new Map<string, number[]>();
+    exitMaps.forEach(m => m.forEach((vals, acc) => {
+        if (!auditSaidasTradItems.has(acc)) auditSaidasTradItems.set(acc, initArray());
+        vals.forEach((v, i) => auditSaidasTradItems.get(acc)![i] += v);
+    }));
+
+    const auditSaidasSub = [
+      {
+        id: 'audit-saidas-trad',
+        name: '(-) Saídas Tradicionais (Op/Inv/Fin)',
+        values: rows.saidasOp.total.map((v, i) => -(v + rows.saidasInv.total[i] + rows.saidasFin.total[i])),
+        monthlyAH: calculateAH(rows.saidasOp.total.map((v, i) => -(v + rows.saidasInv.total[i] + rows.saidasFin.total[i]))),
+        level: 2,
+        tipo: 'CONTA',
+        subcategories: createDetailRows(auditSaidasTradItems, 'audit-saidas-trad').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+      },
+      {
+        id: 'audit-saidas-transf',
+        name: '(-) Saídas de Transferência',
+        values: rows.saidasTransfAudit.total.map(v => -v),
+        monthlyAH: calculateAH(rows.saidasTransfAudit.total.map(v => -v)),
+        subcategories: createDetailRows(rows.saidasTransfAudit.items, 'audit-saidas-transf').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+        level: 2,
+        tipo: 'CONTA'
+      },
+      {
+        id: 'audit-saidas-diff',
+        name: '(-) Diferenças (Saídas)',
+        values: rows.saidasDiff.total.map(v => -v),
+        monthlyAH: calculateAH(rows.saidasDiff.total.map(v => -v)),
+        subcategories: createDetailRows(rows.saidasDiff.items, 'audit-saidas-diff').map(r => ({...r, values: r.values?.map(v => -v), monthlyAH: calculateAH(r.values?.map(v => -v) || [])})),
+        level: 2,
+        tipo: 'CONTA'
+      }
+    ];
+
+    const totalSaidasVal = initArray();
+    auditSaidasSub.forEach(s => s.values.forEach((v, i) => totalSaidasVal[i] += v));
+
+    const auditNetResult = initArray();
+    totalEntradasVal.forEach((v, i) => auditNetResult[i] = v + totalSaidasVal[i]);
+
+    const auditTableData = [
+      {
+        id: 'audit-entradas',
+        name: 'TOTAL DE ENTRADAS',
+        values: totalEntradasVal,
+        monthlyAH: calculateAH(totalEntradasVal),
+        level: 1,
+        tipo: 'SUBTOTAL',
+        subcategories: auditEntradasSub
+      },
+      {
+        id: 'audit-saidas',
+        name: 'TOTAL DE SAÍDAS',
+        values: totalSaidasVal,
+        monthlyAH: calculateAH(totalSaidasVal),
+        level: 1,
+        tipo: 'SUBTOTAL',
+        subcategories: auditSaidasSub
+      },
+      {
+        id: 'audit-resultado',
+        name: 'GERAÇÃO LÍQUIDA (AUDITORIA)',
+        values: auditNetResult,
+        monthlyAH: calculateAH(auditNetResult),
+        level: 1,
+        tipo: 'TOTAL',
+        subcategories: []
+      }
+    ];
+
+    return { kpis, tableData, auditTableData, columns };
   }, [flows, initialBalances, loading, year, monthLabel, viewMode]);
+
+  const auditDataRaw = processedData?.auditTableData || [];
+  const auditColumnsRaw = processedData?.columns || [];
+  
+  const isAuditFiltered = viewMode === 'monthly' && auditMonthFilter !== 'all';
+  const columnLabelsAudit = isAuditFiltered
+    ? [MONTH_LABELS[parseInt(auditMonthFilter)], 'Total Anual']
+    : auditColumnsRaw;
+
+  // recursive deep clone function to slice exactly the values
+  const filterAuditData = (data: any[]): any[] => {
+    if (!isAuditFiltered) return data;
+    const colIdx = parseInt(auditMonthFilter);
+    const totalIdx = 12; // In monthly mode, total is always index 12
+    return data.map(item => ({
+      ...item,
+      values: item.values ? [item.values[colIdx], item.values[totalIdx]] : undefined,
+      monthlyAH: item.monthlyAH ? [item.monthlyAH[colIdx], item.monthlyAH[totalIdx]] : undefined,
+      subcategories: item.subcategories ? filterAuditData(item.subcategories) : undefined
+    }));
+  };
+  
+  const filteredAuditData = filterAuditData(auditDataRaw);
 
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
@@ -677,6 +1012,96 @@ export default function CashFlowDashboard() {
                                             key={bank.id}
                                             {...bank}
                                             timePerspective={viewMode === 'monthly' ? 'year' : 'multi-year'}
+                                            level={3}
+                                            className="bg-zinc-50/80 italic"
+                                            showAV={false}
+                                        />
+                                    ))}
+                                </React.Fragment>
+                            );
+                        })}
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+
+          {/* Audit Table */}
+          <section className="bg-white border border-black/[0.03] rounded-xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.08)] relative overflow-hidden flex flex-col max-w-full">
+            <div className="px-6 py-5 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+              <div className="flex flex-col gap-1">
+                <h2 className="text-lg font-black tracking-tight text-rodovia-azul uppercase flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-amber-500" />
+                  Resumo de <span className="text-amber-500 italic">Auditoria de Entradas e Saídas</span>
+                </h2>
+                <div className="flex items-center gap-4">
+                  <p className="text-[11px] text-zinc-400 font-bold uppercase tracking-widest pl-7">
+                    Visão de Conferência Bruta (Entradas vs Saídas)
+                  </p>
+                  {viewMode === 'monthly' && (
+                    <select
+                      value={auditMonthFilter}
+                      onChange={(e) => setAuditMonthFilter(e.target.value)}
+                      className="text-xs border border-zinc-200 rounded-md text-zinc-600 bg-white px-2 py-1 outline-none focus:ring-1 focus:ring-amber-500 transition-all cursor-pointer font-bold"
+                    >
+                      <option value="all">Ano Completo</option>
+                      {MONTH_LABELS.map((m, i) => (
+                        <option key={m} value={i}>{m}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className={cn(
+              "w-full overflow-auto max-h-[850px] scrollbar-thin scrollbar-track-transparent scrollbar-thumb-zinc-200/50 hover:scrollbar-thumb-zinc-300",
+              "max-w-[calc(100vw-2.5rem)]"
+            )}>
+              <div className={cn("pb-4", viewMode === 'monthly' ? (auditMonthFilter === 'all' ? "min-w-[3440px]" : "min-w-[800px]") : "min-w-[4000px]")}>
+                <DRERow 
+                  id="header-audit"
+                  name="CONFERÊNCIA BRUTA" 
+                  labels={columnLabelsAudit}
+                  isHeader={true} 
+                  timePerspective={isAuditFiltered ? 'multi-year' : (viewMode === 'monthly' ? 'year' : 'multi-year')}
+                  showAV={false}
+                />
+                
+                {filteredAuditData.map((row: any) => {
+                  const isExpanded = expandedRows.has(row.id);
+                  const hasChildren = row.subcategories && row.subcategories.length > 0;
+
+                  return (
+                    <React.Fragment key={row.id}>
+                        <DRERow
+                            {...row}
+                            timePerspective={isAuditFiltered ? 'multi-year' : (viewMode === 'monthly' ? 'year' : 'multi-year')}
+                            isExpanded={isExpanded}
+                            hasChildren={hasChildren}
+                            onToggle={() => toggleRow(row.id)}
+                            showAV={false}
+                        />
+                        {isExpanded && row.subcategories.map((sub: any) => {
+                            const isSubExpanded = expandedRows.has(sub.id);
+                            const hasSubChildren = sub.subcategories && sub.subcategories.length > 0;
+                            return (
+                                <React.Fragment key={sub.id}>
+                                    <DRERow
+                                        {...sub}
+                                        timePerspective={isAuditFiltered ? 'multi-year' : (viewMode === 'monthly' ? 'year' : 'multi-year')}
+                                        isExpanded={isSubExpanded}
+                                        hasChildren={hasSubChildren}
+                                        onToggle={() => toggleRow(sub.id)}
+                                        className="bg-zinc-50/50"
+                                        showAV={false}
+                                    />
+                                    {isSubExpanded && sub.subcategories?.map((bank: any) => (
+                                        <DRERow
+                                            key={bank.id}
+                                            {...bank}
+                                            timePerspective={isAuditFiltered ? 'multi-year' : (viewMode === 'monthly' ? 'year' : 'multi-year')}
                                             level={3}
                                             className="bg-zinc-50/80 italic"
                                             showAV={false}
